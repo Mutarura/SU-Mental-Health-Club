@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { PeopleIcon, CheckIcon, HeartIcon, BuildingIcon, DocumentIcon, ShieldIcon, SoundIcon, WarningIcon } from '../../components/icons';
+import { PeopleIcon, CheckIcon, HeartIcon, BuildingIcon, DocumentIcon, SoundIcon, WarningIcon } from '../../components/icons';
 
 export default function PeerSupportPage() {
   return (
@@ -160,7 +160,7 @@ export default function PeerSupportPage() {
           </div>
           <h2 className="text-3xl font-bold mb-4">Ready to Connect?</h2>
           <p className="text-xl mb-6 opacity-90">
-            Join our peer support circles and be part of a caring community that supports each other's mental health journey.
+            Join our peer support circles and be part of a caring community that supports each other&apos;s mental health journey.
           </p>
           <Link 
             href="/events"
@@ -177,7 +177,7 @@ export default function PeerSupportPage() {
           </div>
           <h2 className="text-2xl font-bold mb-4">Need Immediate Help?</h2>
           <p className="text-lg mb-6 opacity-90">
-            If you're experiencing a mental health emergency, please contact:
+            If you&apos;re experiencing a mental health emergency, please contact:
           </p>
           <div className="space-y-2">
             <p className="text-xl font-bold">Strathmore Medical Centre: +254 703 034 000</p>

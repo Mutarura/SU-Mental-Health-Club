@@ -31,8 +31,8 @@ interface IconProps {
   ariaLabel?: string;
 }
 
-const withA11y = (Icon: React.ComponentType<any>) =>
-  ({ className = 'w-6 h-6', ariaLabel }: IconProps) => (
+const withA11y = (Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>) => {
+  const WrappedIcon = ({ className = 'w-6 h-6', ariaLabel }: IconProps) => (
     <Icon
       className={className}
       aria-label={ariaLabel}
@@ -40,6 +40,9 @@ const withA11y = (Icon: React.ComponentType<any>) =>
       aria-hidden={ariaLabel ? undefined : true}
     />
   );
+  WrappedIcon.displayName = `A11yIcon(${Icon.displayName || Icon.name || 'Component'})`;
+  return WrappedIcon;
+};
 
 export const CalendarIcon = withA11y(Calendar);
 export const BookIcon = withA11y(BookOpen);

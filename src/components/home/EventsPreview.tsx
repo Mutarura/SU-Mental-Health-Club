@@ -21,7 +21,7 @@ export default function EventsPreview() {
         const { data, error } = await supabase
           .from('events')
           .select('*')
-          .order('date', { ascending: true })
+          .order('start', { ascending: true })
           .limit(3);
 
         if (error) {
@@ -35,7 +35,6 @@ export default function EventsPreview() {
         setLoading(false);
       }
     }
-
     fetchEvents();
   }, []);
 
@@ -118,7 +117,7 @@ export default function EventsPreview() {
                     <h3 className="text-lg font-semibold text-su-blue mb-2">{event.title}</h3>
                     <div className="flex items-center text-sm text-gray-600 mb-2">
                       <CalendarIcon className="w-4 h-4 mr-1" />
-                      {formatDate(event.date)}
+{formatDate((event as any).date || (event as any).start)}
                     </div>
                     <div className="flex items-center text-sm text-gray-600 mb-3">
                       <LocationIcon className="w-4 h-4 mr-1" />

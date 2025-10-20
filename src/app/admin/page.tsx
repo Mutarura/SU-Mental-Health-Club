@@ -11,12 +11,13 @@ import {
   CalendarIcon, 
   BookIcon, 
   PeopleIcon, 
-  UserIcon, 
-  ChartIcon,
+  UserIcon,
   DocumentIcon,
   EmailIcon,
   SunIcon
 } from '../../components/icons';
+import { MONTHLY_AWARENESS as DEFAULT_AWARENESS } from '../../data/monthlyAwareness';
+// duplicate import removed – DEFAULT_AWARENESS already imported above
 
 interface AdminStats {
   totalEvents: number;
@@ -48,22 +49,15 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Monthly Awareness states
-  const [awarenessEntries, setAwarenessEntries] = useState<any[]>([]);
+  const [awarenessEntries, setAwarenessEntries] = useState(DEFAULT_AWARENESS);
   const [editingAwarenessId, setEditingAwarenessId] = useState<string | null>(null);
-  const [newAwareness, setNewAwareness] = useState<{
-    id: string;
-    month: string;
-    theme: string;
-    message: string;
-    resource_url: string;
-    icon: string;
-  }>({
+  const [newAwareness, setNewAwareness] = useState({
     id: '',
-    month: '', 
-    theme: '', 
-    message: '', 
+    month: '',
+    theme: '',
+    message: '',
     resource_url: '',
-    icon: 'sun'
+    icon: 'sun',
   });
 
   // Data arrays
@@ -162,7 +156,7 @@ export default function AdminPage() {
 
   const fetchClubCouncil = async () => {
     if (!supabase) return;
-    const { data, error } = await supabase.from('club_council').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('leaders').select('*').order('created_at', { ascending: false });
     if (!error) setClubCouncil(data || []);
   };
 
@@ -195,15 +189,16 @@ export default function AdminPage() {
     try {
       if (editingItem) {
         const { error } = await supabase
-          .from('club_council')
+          .from('leaders')
           .update(clubCouncilForm)
           .eq('id', editingItem.id);
         if (!error) {
           setMessage('Club Council member updated successfully!');
           setEditingItem(null);
+          fetchClubCouncil();
         }
       } else {
-        const { data, error } = await supabase.from('club_council').insert([clubCouncilForm]).select();
+        const { data, error } = await supabase.from('leaders').insert([clubCouncilForm]).select();
         if (!error && data) {
           setClubCouncil([data[0], ...clubCouncil]);
           setMessage('Club Council member added successfully!');
@@ -277,6 +272,15 @@ export default function AdminPage() {
   };
 
   // Load data when user is authenticated
+  const fetchMonthlyAwareness = async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase
+      .from('monthly_awareness')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (!error) setAwarenessEntries(data || DEFAULT_AWARENESS);
+  };
+
   useEffect(() => {
     if (user) {
       fetchStats();
@@ -287,6 +291,7 @@ export default function AdminPage() {
       fetchTeamMembers();
       fetchAboutContent();
       fetchFooterContent();
+      fetchMonthlyAwareness();
     }
   }, [user]);
 
@@ -509,39 +514,37 @@ export default function AdminPage() {
 
 
   // About Content Update
-  const handleAboutUpdate = async (field: string, value: any) => {
+  const handleAboutUpdate = async (field: 'mission_text' | 'story_text' | 'collaboration_note' | 'image_url', value: string) => {
     if (!supabase) return;
     try {
       const updateData = { [field]: value };
       const { error } = await supabase
-        .from('about_content')
-        .upsert(updateData)
-        .eq('id', aboutContent?.id || 1);
-
+        .from('about')
+        .update(updateData)
+        .eq('id', aboutContent?.id);
       if (!error) {
         setMessage(`${field} updated successfully!`);
         fetchAboutContent();
       }
-    } catch (error) {
+    } catch {
       setMessage(`Error updating ${field}`);
     }
   };
 
   // Footer Contact Update
-  const handleFooterUpdate = async (field: string, value: string) => {
+  const handleFooterUpdate = async (field: 'med_centre_contact' | 'club_email' | 'emergency_numbers', value: string) => {
     if (!supabase) return;
     try {
       const updateData = { [field]: value };
       const { error } = await supabase
-        .from('footer_contact')
-        .upsert(updateData)
-        .eq('id', footerContent?.id || 1);
-
+        .from('footer')
+        .update(updateData)
+        .eq('id', footerContent?.id);
       if (!error) {
         setMessage(`${field} updated successfully!`);
         fetchFooterContent();
       }
-    } catch (error) {
+    } catch {
       setMessage(`Error updating ${field}`);
     }
   };
@@ -649,10 +652,10 @@ export default function AdminPage() {
               Admin Access
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              Sign in to access the admin dashboard
+              {isLogin ? 'Sign in to access the admin dashboard' : 'Create an admin account'}
             </p>
           </div>
-          <form className="mt-8 space-y-6" onSubmit={handleSignIn}>
+          <form className="mt-8 space-y-6" onSubmit={isLogin ? handleSignIn : handleSignUp}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
@@ -666,7 +669,38 @@ export default function AdminPage() {
                 required
               />
             </div>
-            
+
+            {!isLogin && (
+              <>
+                <div>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
+                    required
+                  />
+                </div>
+              </>
+            )}
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
@@ -680,20 +714,46 @@ export default function AdminPage() {
                 required
               />
             </div>
-            
+
+            {!isLogin && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
+                  required
+                />
+              </div>
+            )}
+
             {message && (
               <div className="p-3 rounded-md text-sm bg-red-50 text-red-700 border border-red-200">
                 {message}
               </div>
             )}
-            
+
             <button
               type="submit"
               disabled={authLoading}
               className="w-full bg-su-blue text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-su-blue disabled:opacity-50"
             >
-              {authLoading ? 'Signing In...' : 'Sign In'}
+              {authLoading ? (isLogin ? 'Signing In...' : 'Signing Up...') : (isLogin ? 'Sign In' : 'Sign Up')}
             </button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                className="text-sm text-su-blue hover:underline"
+                onClick={() => setIsLogin(!isLogin)}
+              >
+                {isLogin ? 'No account? Create one' : 'Already have an account? Sign in'}
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -737,7 +797,6 @@ export default function AdminPage() {
     { id: 'team', label: 'Team Members', icon: <UserIcon className="w-5 h-5 mr-2" /> },
     { id: 'about', label: 'About Content', icon: <DocumentIcon className="w-5 h-5 mr-2" /> },
     { id: 'footer', label: 'Footer Contact', icon: <EmailIcon className="w-5 h-5 mr-2" /> },
-    { id: 'awareness', label: 'Monthly Awareness', icon: <SunIcon className="w-5 h-5 mr-2" /> },
     { id: 'awareness', label: 'Monthly Awareness', icon: <SunIcon className="w-5 h-5 mr-2" /> }
             ].map((tab) => (
               <button
@@ -1187,43 +1246,32 @@ export default function AdminPage() {
             {aboutContent && (
               <div className="space-y-6">
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Mission Statement</h3>
+                  <h3 className="text-lg font-semibold mb-4">Mission Text</h3>
                   <textarea
-                    value={(aboutContent as any).mission || ''}
-                    onChange={(e) => handleAboutUpdate('mission', e.target.value)}
+                    value={(aboutContent as any).mission_text || ''}
+                    onChange={(e) => handleAboutUpdate('mission_text', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                     rows={4}
                   />
                 </div>
 
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Vision Statement</h3>
+                  <h3 className="text-lg font-semibold mb-4">Story Text</h3>
                   <textarea
-                    value={(aboutContent as any).vision || ''}
-                    onChange={(e) => handleAboutUpdate('vision', e.target.value)}
+                    value={(aboutContent as any).story_text || ''}
+                    onChange={(e) => handleAboutUpdate('story_text', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
+                    rows={6}
+                  />
+                </div>
+
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-semibold mb-4">Collaboration Note</h3>
+                  <textarea
+                    value={(aboutContent as any).collaboration_note || ''}
+                    onChange={(e) => handleAboutUpdate('collaboration_note', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                     rows={4}
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">History</h3>
-                  <textarea
-                    value={(aboutContent as any).history || ''}
-                    onChange={(e) => handleAboutUpdate('history', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Values (one per line)</h3>
-                  <textarea
-                    value={Array.isArray((aboutContent as any)?.values) ? (aboutContent as any).values.join('\n') : ''}
-                    onChange={(e) => handleAboutUpdate('values', e.target.value.split('\n').filter(v => v.trim()))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    rows={6}
-                    placeholder="Enter each value on a new line"
                   />
                 </div>
               </div>
@@ -1641,7 +1689,7 @@ export default function AdminPage() {
                 />
                 <select
                   value={newAwareness.icon}
-                  onChange={(e) => setNewAwareness({ ...newAwareness, icon: e.target.value as MonthlyAwareness['icon'] })}
+                  onChange={(e) => setNewAwareness({ ...newAwareness, icon: e.target.value as string })}
                   className="border rounded-md px-3 py-2"
                   aria-label="Icon"
                 >
@@ -1654,16 +1702,35 @@ export default function AdminPage() {
                 </select>
               </div>
               <button
-                className="mt-4 bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                onClick={() => {
-                  if (!newAwareness.month || !newAwareness.theme || !newAwareness.message) return;
-                  const id = `${newAwareness.month.toLowerCase()}-${Date.now()}`;
-                  setAwarenessEntries((prev) => [...prev, { ...newAwareness, id }]);
-                  setNewAwareness({ id: '', month: '', theme: '', message: '', resource_url: '', icon: 'sun' });
-                  // TODO: Supabase insert goes here
-                }}
-                aria-label="Add Awareness Entry"
-              >
+                  className="mt-4 bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  onClick={async () => {
+                    if (!newAwareness.month || !newAwareness.theme || !newAwareness.message) return;
+                    if (!supabase) return;
+
+                    const payload = {
+                      month: newAwareness.month,
+                      theme: newAwareness.theme,
+                      message: newAwareness.message,
+                      resource_url: newAwareness.resource_url || null,
+                      icon: newAwareness.icon || 'sun',
+                    };
+
+                    const { data, error } = await supabase
+                      .from('monthly_awareness')
+                      .insert([payload])
+                      .select()
+                      .single();
+
+                    if (!error && data) {
+                      setAwarenessEntries((prev) => [...prev, data]);
+                      setNewAwareness({ id: '', month: '', theme: '', message: '', resource_url: '', icon: 'sun' });
+                      setMessage('Awareness entry added successfully');
+                    } else {
+                      setMessage(error?.message || 'Failed to add awareness entry');
+                    }
+                  }}
+                  aria-label="Add Awareness Entry"
+                >
                 Add Entry
               </button>
             </div>
@@ -1704,13 +1771,30 @@ export default function AdminPage() {
                       />
                       <div className="flex gap-2 mt-2">
                         <button
-                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                          onClick={() => {
-                            setAwarenessEntries((prev) => prev.map((a) => (a.id === entry.id ? entry : a)));
-                            setEditingAwarenessId(null);
-                            // TODO: Supabase update goes here
-                          }}
-                        >
+                            className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                            onClick={async () => {
+                              if (!supabase) return;
+
+                              const { error } = await supabase
+                                .from('monthly_awareness')
+                                .update({
+                                  month: entry.month,
+                                  theme: entry.theme,
+                                  message: entry.message,
+                                  resource_url: entry.resource_url || null,
+                                  icon: entry.icon || 'sun',
+                                })
+                                .eq('id', entry.id);
+
+                              if (!error) {
+                                setAwarenessEntries((prev) => prev.map((a) => (a.id === entry.id ? entry : a)));
+                                setEditingAwarenessId(null);
+                                setMessage('Awareness entry updated successfully');
+                              } else {
+                                setMessage(error.message || 'Failed to update awareness entry');
+                              }
+                            }}
+                          >
                           Save
                         </button>
                         <button
@@ -1747,9 +1831,20 @@ export default function AdminPage() {
                         </button>
                         <button
                           className="bg-su-red text-white px-4 py-2 rounded-md hover:bg-red-600"
-                          onClick={() => {
-                            setAwarenessEntries((prev) => prev.filter((a) => a.id !== entry.id));
-                            // TODO: Supabase delete goes here
+                          onClick={async () => {
+                            if (!supabase) return;
+
+                            const { error } = await supabase
+                              .from('monthly_awareness')
+                              .delete()
+                              .eq('id', entry.id);
+
+                            if (!error) {
+                              setAwarenessEntries((prev) => prev.filter((a) => a.id !== entry.id));
+                              setMessage('Awareness entry deleted successfully');
+                            } else {
+                              setMessage(error.message || 'Failed to delete awareness entry');
+                            }
                           }}
                         >
                           Delete
@@ -1775,7 +1870,7 @@ export default function AdminPage() {
                   <input
                     type="email"
                     value={(footerContent as any)?.email || ''}
-                    onChange={(e) => handleFooterUpdate('email', e.target.value)}
+                    onChange={(e) => handleFooterUpdate('club_email', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                   />
                 </div>
@@ -1785,7 +1880,7 @@ export default function AdminPage() {
                   <input
                     type="tel"
                     value={(footerContent as any)?.phone || ''}
-                    onChange={(e) => handleFooterUpdate('phone', e.target.value)}
+                    onChange={(e) => handleFooterUpdate('med_centre_contact', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                   />
                 </div>
@@ -1794,7 +1889,7 @@ export default function AdminPage() {
                   <h3 className="text-lg font-semibold mb-4">Address</h3>
                   <textarea
                     value={(footerContent as any)?.address || ''}
-                    onChange={(e) => handleFooterUpdate('address', e.target.value)}
+                    onChange={(e) => handleFooterUpdate('med_centre_contact', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                     rows={3}
                   />
@@ -1805,7 +1900,7 @@ export default function AdminPage() {
                   <input
                     type="text"
                     value={(footerContent as any)?.office_hours || ''}
-                    onChange={(e) => handleFooterUpdate('office_hours', e.target.value)}
+                    onChange={(e) => handleFooterUpdate('emergency_numbers', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                     placeholder="e.g., Monday - Friday: 9:00 AM - 5:00 PM"
                   />

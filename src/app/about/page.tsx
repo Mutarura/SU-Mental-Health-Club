@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import Image from 'next/image';
 import type { AboutContent, TeamMember } from '../../types/database.types';
-import { ShieldIcon, EyeIcon, ClockIcon, LightningIcon, PeopleIcon, HeartIcon, CheckIcon, EmailIcon } from '../../components/icons';
+import { EyeIcon, LightningIcon, PeopleIcon, EmailIcon } from '../../components/icons';
 
 export default function AboutPage() {
   const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
@@ -20,7 +20,8 @@ export default function AboutPage() {
       if (!supabase) {
         // Default about content
         setAboutContent({
-          id: 1,
+          id: '1',
+          ...(aboutContent as any),
           mission: 'To promote mental health awareness and provide support for all students at Strathmore University.',
           vision: 'A campus community where mental health is prioritized, stigma is eliminated, and all students have access to the support they need.',
           history: 'The Strathmore Mental Health Club was founded in 2020 by a group of passionate students who recognized the need for greater mental health awareness and support on campus.',
@@ -63,7 +64,8 @@ export default function AboutPage() {
 
         // Default about content
         setAboutContent({
-          id: 1,
+          id: '1',
+          ...(aboutContent as any),
           mission: 'To promote mental health awareness and provide support for all students at Strathmore University.',
           vision: 'A campus community where mental health is prioritized, stigma is eliminated, and all students have access to the support they need.',
           history: 'The Strathmore Mental Health Club was founded in 2020 by a group of passionate students who recognized the need for greater mental health awareness and support on campus.',
@@ -127,7 +129,7 @@ export default function AboutPage() {
               </div>
               <h2 className="text-2xl font-semibold text-su-blue">Our Mission</h2>
             </div>
-            <p className="text-gray-800 leading-relaxed text-lg">{aboutContent?.mission}</p>
+            <p className="text-gray-800 leading-relaxed text-lg">{(aboutContent as any)?.mission}</p>
           </div>
           <div className="bg-white p-8 rounded-lg shadow-md border-t-4 border-su-red">
             <div className="flex items-center mb-4">
@@ -136,14 +138,14 @@ export default function AboutPage() {
               </div>
               <h2 className="text-2xl font-semibold text-su-red">Our Vision</h2>
             </div>
-            <p className="text-gray-800 leading-relaxed text-lg">{aboutContent?.vision}</p>
+            <p className="text-gray-800 leading-relaxed text-lg">{(aboutContent as any)?.vision}</p>
           </div>
         </div>
 
         {/* History Section */}
         <div className="mb-20 bg-su-gold bg-opacity-5 rounded-lg p-8 border-l-4 border-su-gold">
           <h2 className="text-2xl font-bold text-su-blue mb-4">Our Story</h2>
-          <p className="text-gray-700 leading-relaxed text-lg">{aboutContent?.history}</p>
+          <p className="text-gray-700 leading-relaxed text-lg">{(aboutContent as any)?.history}</p>
         </div>
 
         {/* Team Section */}
@@ -182,14 +184,14 @@ export default function AboutPage() {
         </div>
 
         {/* Values Section */}
-        {aboutContent?.values && aboutContent.values.length > 0 && (
+        {(aboutContent as any)?.values && (aboutContent as any).values.length > 0 && (
           <div className="my-20">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-su-blue mb-2">Our Values</h2>
               <p className="text-gray-600">What guides our mission and actions</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {aboutContent.values.map((value, index) => (
+              {(aboutContent as any).values.map((value: string, index: number) => (
                 <div key={index} className="bg-su-blue text-white rounded-lg p-6 text-center hover:bg-blue-800 transition-colors">
                   <p className="font-semibold text-lg">{value}</p>
                 </div>
@@ -202,7 +204,7 @@ export default function AboutPage() {
         <div className="bg-su-red text-white py-16 rounded-lg text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Get Involved</h2>
           <p className="text-lg text-white/90 max-w-2xl mx-auto mb-8">
-            Interested in joining our team or volunteering? We're always looking for passionate students to help us make a difference.
+            Interested in joining our team or volunteering? We&apos;re always looking for passionate students to help us make a difference.
           </p>
           <a
             href="mailto:mentalhealth@strathmore.edu"

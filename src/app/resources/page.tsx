@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import Image from 'next/image';
 import type { Resource } from '../../types/database.types';
 import { BookIcon, DocumentIcon } from '../../components/icons';
 

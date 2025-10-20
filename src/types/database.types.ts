@@ -1,11 +1,14 @@
 export type Event = {
   id: string;
   title: string;
+  slug: string;
   description: string;
-  date: string;
+  start: string;
+  end: string;
   location: string;
+  calendar_link?: string;
   image_url?: string;
-  created_at: string;
+  created_at?: string;
   updated_at?: string;
 };
 
@@ -36,16 +39,16 @@ export type ClubCouncilMember = {
   photo_url?: string;
   email: string;
   linkedin_url?: string;
-  created_at: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type AboutContent = {
-  id: number;
-  mission: string;
-  vision: string;
-  history: string;
-  values: string[];
-  created_at?: string;
+  id: string;
+  mission_text: string;
+  story_text: string;
+  collaboration_note: string;
+  image_url?: string;
   updated_at?: string;
 };
 
