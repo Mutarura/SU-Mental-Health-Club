@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  /* Strathmore Brand Colors */
+  --su-blue: #3A5DAE;    /* Strathmore Blue - Pantone 7455 C */
+  --su-red: #E03C31;     /* Strathmore Red - Pantone 179 C */
+  --su-gold: #EED484;    /* Strathmore Gold - Pantone 7403 C */
+  --su-black: #2D2926;   /* Strathmore Black - Pantone Black C */
+  
+  /* System Colors */
+  --background: #ffffff;
+  --foreground: var(--su-black);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--su-blue);
+  --color-secondary: var(--su-red);
+  --color-accent: var(--su-gold);
+  --color-neutral: var(--su-black);
+  --font-sans: "Gill Sans", "Inter", "system-ui", sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: var(--su-black);
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Gill Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Utility classes for Strathmore brand colors */
+.text-su-blue { color: var(--su-blue); }
+.text-su-red { color: var(--su-red); }
+.text-su-gold { color: var(--su-gold); }
+.text-su-black { color: var(--su-black); }
+
+.bg-su-blue { background-color: var(--su-blue); }
+.bg-su-red { background-color: var(--su-red); }
+.bg-su-gold { background-color: var(--su-gold); }
+.bg-su-black { background-color: var(--su-black); }
