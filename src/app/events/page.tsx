@@ -9,8 +9,10 @@ const DEFAULT_EVENTS: Event[] = [
   {
     id: '1',
     title: 'Mental Health Awareness Week',
+    slug: 'mental-health-awareness-week',
     description: 'A week-long series of events focused on raising awareness about mental health issues among university students. Join us for seminars, discussions, panel talks with mental health professionals, and resource sharing sessions.',
-    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    start: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    end: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
     location: 'Strathmore University Main Campus - Multipurpose Hall',
     image_url: undefined,
     created_at: new Date().toISOString(),
@@ -19,7 +21,9 @@ const DEFAULT_EVENTS: Event[] = [
     id: '2',
     title: 'Stress Management Workshop',
     description: 'Learn effective techniques to manage academic stress and maintain well-being during exam periods. Expert facilitators will guide breathing exercises, progressive muscle relaxation, and mindfulness practices tailored for students.',
-    date: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString(),
+    slug: 'stress-management-workshop',
+    start: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString(),
+    end: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
     location: 'Student Center, Room 301',
     image_url: undefined,
     created_at: new Date().toISOString(),
@@ -27,8 +31,10 @@ const DEFAULT_EVENTS: Event[] = [
   {
     id: '3',
     title: 'Peer Support Circle',
+    slug: 'peer-support-circle',
     description: 'A safe, confidential space for students to share experiences and support one another. No judgment, just community care and understanding. Led by trained peer supporters from our club council.',
-    date: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
+    start: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
+    end: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
     location: 'Library Lounge, 3rd Floor',
     image_url: undefined,
     created_at: new Date().toISOString(),
@@ -36,8 +42,10 @@ const DEFAULT_EVENTS: Event[] = [
   {
     id: '4',
     title: 'Self-Care and Wellness Day',
+    slug: 'self-care-and-wellness-day',
     description: 'Join us for a day dedicated to self-care activities including yoga, meditation, art therapy, and wellness talks. Bring yourself and leave feeling rejuvenated and supported.',
-    date: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000).toISOString(),
+    start: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000).toISOString(),
+    end: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
     location: 'Sports Complex - Wellness Center',
     image_url: undefined,
     created_at: new Date().toISOString(),
@@ -45,8 +53,10 @@ const DEFAULT_EVENTS: Event[] = [
   {
     id: '5',
     title: 'Navigating Academic Pressure',
+    slug: 'navigating-academic-pressure',
+    end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
     description: 'A discussion panel featuring academics, counselors, and successful students sharing strategies on how to manage academic pressure while maintaining mental health and work-life balance.',
-    date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    start: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     location: 'Main Auditorium',
     image_url: undefined,
     created_at: new Date().toISOString(),
@@ -59,6 +69,15 @@ export default function EventsPage() {
 
   useEffect(() => {
     fetchEvents();
+
+    if (supabase) {
+      const channel = supabase.channel('events-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, fetchEvents)
+        .subscribe();
+      return () => {
+        channel.unsubscribe();
+      };
+    }
   }, []);
 
   const fetchEvents = async () => {
@@ -72,7 +91,7 @@ export default function EventsPage() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
-        .order('date', { ascending: true });
+        .order('start', { ascending: true });
 
       if (error) {
         console.error('Error fetching events:', error);
@@ -159,15 +178,15 @@ export default function EventsPage() {
                 <div className="md:w-2/3 p-8">
                   <div className="flex items-center justify-between mb-4">
                     <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                      new Date(event.date) >= now 
+                      new Date(event.start) >= now
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {new Date(event.date) >= now ? 'Upcoming' : 'Past Event'}
+                      {new Date(event.start) >= now ? 'Upcoming' : 'Past Event'}
                     </span>
                     <div className="flex items-center text-gray-500 text-sm">
                       <CalendarIcon className="w-4 h-4 mr-1" />
-                      {new Date(event.date).toLocaleDateString()}
+                      {new Date(event.start).toLocaleDateString()}
                     </div>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">{event.title}</h3>
@@ -176,7 +195,7 @@ export default function EventsPage() {
                     <LocationIcon className="w-4 h-4 mr-2" />
                     {event.location}
                   </div>
-                  {new Date(event.date) >= now && (
+                  {new Date(event.start) >= now && (
                     <button className="bg-su-blue text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors font-medium">
                       Register for Event
                     </button>

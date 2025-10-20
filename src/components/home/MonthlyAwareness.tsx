@@ -40,6 +40,17 @@ export default function MonthlyAwareness() {
             }
         }
         loadAwareness();
+
+        // Realtime sync
+        const channel = supabase?.channel('awareness-realtime')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'monthly_awareness' }, (payload) => {
+            loadAwareness();
+          })
+          .subscribe();
+
+        return () => {
+          channel?.unsubscribe();
+        };
     }, []);
 
     return (
@@ -50,7 +61,6 @@ export default function MonthlyAwareness() {
                     <p className="text-gray-600">Timely themes to support mental well-being</p>
                     <div className="w-24 h-1 bg-su-red mx-auto mt-4" />
                 </div>
-    
                 <div
                     className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 md:mx-0 md:px-0"
                     role="list"
@@ -61,29 +71,43 @@ export default function MonthlyAwareness() {
                         return (
                             <div
                                 key={item.id}
-                                className="min-w-[240px] md:min-w-[280px] snap-start bg-white rounded-2xl shadow-md p-6 flex-shrink-0"
+                                className="min-w-[360px] md:min-w-[480px] lg:min-w-[560px] snap-start rounded-2xl shadow-md flex-shrink-0 bg-white"
                                 role="listitem"
                             >
-                                <div className="flex items-center mb-4">
-                                    <div className="w-14 h-14 rounded-full bg-su-blue/10 flex items-center justify-center">
-                                        <Icon className="w-7 h-7 text-su-blue" />
-                                    </div>
-                                    <div className="ml-4">
-                                        <p className="text-sm text-su-black/70">{item.month}</p>
-                                        <h3 className="text-lg font-semibold text-su-blue">{item.theme}</h3>
+                                <div className="relative h-40 md:h-56 lg:h-64 rounded-t-2xl overflow-hidden">
+                                    <div
+                                        className={`absolute inset-0 ${item.banner_url ? '' : 'bg-gradient-to-r from-su-blue to-blue-700'}`}
+                                        style={item.banner_url ? { backgroundImage: `url(${item.banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+                                    />
+                                    <div className="absolute inset-0 bg-black/30" />
+                                    <div className="absolute bottom-4 left-4 right-4 flex items-center">
+                                        <div className="w-12 h-12 rounded-full bg-su-blue/70 flex items-center justify-center">
+                                            <Icon className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div className="ml-3">
+                                            <p className="text-sm text-white/90">{item.month}</p>
+                                            <h3 className="text-xl md:text-2xl font-bold text-white">
+                                                {item.theme}
+                                            </h3>
+                                        </div>
                                     </div>
                                 </div>
-    
-                                <p className="text-gray-700 mb-4">{item.message}</p>
-                                {item.resource_url && (
-                                    <Link
-                                        href={item.resource_url}
-                                        className="inline-block text-sm font-medium bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                                        aria-label={`Learn more about ${item.theme}`}
-                                    >
-                                        Learn More
-                                    </Link>
-                                )}
+
+                                <div className="p-6">
+                                    {item.caption && (
+                                        <p className="text-gray-900 mb-2 font-medium">{item.caption}</p>
+                                    )}
+                                    <p className="text-gray-700 mb-4">{item.message}</p>
+                                    {item.resource_url && (
+                                        <Link
+                                            href={item.resource_url}
+                                            className="inline-block text-sm font-medium bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                                            aria-label={`Read more about ${item.theme}`}
+                                        >
+                                            Read More
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                         );
                     })}

@@ -1,9 +1,9 @@
 -- Create Monthly Awareness table and policies
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE IF NOT EXISTS monthly_awareness (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   month TEXT NOT NULL,
   theme TEXT NOT NULL,
   message TEXT NOT NULL,

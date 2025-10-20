@@ -27,10 +27,10 @@ export type Quote = {
   id: string;
   text: string;
   author: string;
-  created_at?: string;
+  created_at: string;
 };
 
-export type ClubCouncilMember = {
+export type CouncilLeader = {
   id: string;
   name: string;
   role: string;
@@ -39,53 +39,6 @@ export type ClubCouncilMember = {
   photo_url?: string;
   email: string;
   linkedin_url?: string;
-  created_at?: string;
-  updated_at?: string;
-};
-
-export type AboutContent = {
-  id: string;
-  mission_text: string;
-  story_text: string;
-  collaboration_note: string;
-  image_url?: string;
-  updated_at?: string;
-};
-
-export type TeamMember = {
-  id: string;
-  name: string;
-  role: string;
-  bio: string;
-  photo_url?: string;
-  email: string;
-  linkedin_url?: string;
-  created_at?: string;
-};
-
-export type Footer = {
-  id: string;
-  med_centre_contact: string;
-  club_email: string;
-  emergency_numbers: string;
-  updated_at?: string;
-};
-
-export type Admin = {
-  id: string;
-  email: string;
-  role: string;
-  created_at: string;
-};
-
-// Add Monthly Awareness type
-export type MonthlyAwareness = {
-  id: string;
-  month: string;
-  theme: string;
-  message: string;
-  resource_url?: string;
-  icon?: 'sun' | 'heart' | 'lightbulb' | 'balance' | 'chat' | 'people';
   created_at?: string;
   updated_at?: string;
 };

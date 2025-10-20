@@ -1,6 +1,9 @@
 -- Add leaders table for About page management
+-- Ensure pgcrypto extension is available
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE IF NOT EXISTS leaders (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   role TEXT NOT NULL,
   bio TEXT NOT NULL,
