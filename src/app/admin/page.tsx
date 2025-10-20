@@ -14,7 +14,8 @@ import {
   UserIcon, 
   ChartIcon,
   DocumentIcon,
-  EmailIcon
+  EmailIcon,
+  SunIcon
 } from '../../components/icons';
 
 interface AdminStats {
@@ -45,6 +46,25 @@ export default function AdminPage() {
 
   // Active tab state
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Monthly Awareness states
+  const [awarenessEntries, setAwarenessEntries] = useState<any[]>([]);
+  const [editingAwarenessId, setEditingAwarenessId] = useState<string | null>(null);
+  const [newAwareness, setNewAwareness] = useState<{
+    id: string;
+    month: string;
+    theme: string;
+    message: string;
+    resource_url: string;
+    icon: string;
+  }>({
+    id: '',
+    month: '', 
+    theme: '', 
+    message: '', 
+    resource_url: '',
+    icon: 'sun'
+  });
 
   // Data arrays
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -710,13 +730,15 @@ export default function AdminPage() {
           <nav className="-mb-px flex space-x-8 overflow-x-auto">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon className="w-5 h-5 mr-2" /> },
-              { id: 'quotes', label: 'Quotes', icon: <ChatIcon className="w-5 h-5 mr-2" /> },
-              { id: 'events', label: 'Events', icon: <CalendarIcon className="w-5 h-5 mr-2" /> },
-              { id: 'resources', label: 'Resources', icon: <BookIcon className="w-5 h-5 mr-2" /> },
-              { id: 'clubcouncil', label: 'Club Council', icon: <PeopleIcon className="w-5 h-5 mr-2" /> },
-              { id: 'team', label: 'Team Members', icon: <UserIcon className="w-5 h-5 mr-2" /> },
-              { id: 'about', label: 'About Content', icon: <DocumentIcon className="w-5 h-5 mr-2" /> },
-              { id: 'footer', label: 'Footer Contact', icon: <EmailIcon className="w-5 h-5 mr-2" /> }
+    { id: 'quotes', label: 'Quotes', icon: <ChatIcon className="w-5 h-5 mr-2" /> },
+    { id: 'events', label: 'Events', icon: <CalendarIcon className="w-5 h-5 mr-2" /> },
+    { id: 'resources', label: 'Resources', icon: <BookIcon className="w-5 h-5 mr-2" /> },
+    { id: 'clubcouncil', label: 'Club Council', icon: <PeopleIcon className="w-5 h-5 mr-2" /> },
+    { id: 'team', label: 'Team Members', icon: <UserIcon className="w-5 h-5 mr-2" /> },
+    { id: 'about', label: 'About Content', icon: <DocumentIcon className="w-5 h-5 mr-2" /> },
+    { id: 'footer', label: 'Footer Contact', icon: <EmailIcon className="w-5 h-5 mr-2" /> },
+    { id: 'awareness', label: 'Monthly Awareness', icon: <SunIcon className="w-5 h-5 mr-2" /> },
+    { id: 'awareness', label: 'Monthly Awareness', icon: <SunIcon className="w-5 h-5 mr-2" /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1572,6 +1594,171 @@ export default function AdminPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Monthly Awareness Tab */}
+        {activeTab === 'awareness' && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Manage Monthly Awareness</h2>
+
+            {/* Add New Entry */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <h3 className="text-lg font-semibold text-su-blue mb-4">Add Awareness Entry</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  value={newAwareness.month}
+                  onChange={(e) => setNewAwareness({ ...newAwareness, month: e.target.value })}
+                  placeholder="Month e.g., January"
+                  className="border rounded-md px-3 py-2"
+                  aria-label="Month"
+                />
+                <input
+                  type="text"
+                  value={newAwareness.theme}
+                  onChange={(e) => setNewAwareness({ ...newAwareness, theme: e.target.value })}
+                  placeholder="Theme e.g., Stress Awareness"
+                  className="border rounded-md px-3 py-2"
+                  aria-label="Theme"
+                />
+                <input
+                  type="text"
+                  value={newAwareness.message}
+                  onChange={(e) => setNewAwareness({ ...newAwareness, message: e.target.value })}
+                  placeholder="Supportive message"
+                  className="border rounded-md px-3 py-2 md:col-span-2"
+                  aria-label="Message"
+                />
+                <input
+                  type="url"
+                  value={newAwareness.resource_url ?? ''}
+                  onChange={(e) => setNewAwareness({ ...newAwareness, resource_url: e.target.value })}
+                  placeholder="Resource URL (optional)"
+                  className="border rounded-md px-3 py-2 md:col-span-2"
+                  aria-label="Resource URL"
+                />
+                <select
+                  value={newAwareness.icon}
+                  onChange={(e) => setNewAwareness({ ...newAwareness, icon: e.target.value as MonthlyAwareness['icon'] })}
+                  className="border rounded-md px-3 py-2"
+                  aria-label="Icon"
+                >
+                  <option value="sun">Sun</option>
+                  <option value="heart">Heart</option>
+                  <option value="lightbulb">Lightbulb</option>
+                  <option value="balance">Balance</option>
+                  <option value="chat">Chat</option>
+                  <option value="people">People</option>
+                </select>
+              </div>
+              <button
+                className="mt-4 bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                onClick={() => {
+                  if (!newAwareness.month || !newAwareness.theme || !newAwareness.message) return;
+                  const id = `${newAwareness.month.toLowerCase()}-${Date.now()}`;
+                  setAwarenessEntries((prev) => [...prev, { ...newAwareness, id }]);
+                  setNewAwareness({ id: '', month: '', theme: '', message: '', resource_url: '', icon: 'sun' });
+                  // TODO: Supabase insert goes here
+                }}
+                aria-label="Add Awareness Entry"
+              >
+                Add Entry
+              </button>
+            </div>
+
+            {/* Awareness List */}
+            <div className="space-y-4">
+              {awarenessEntries.map((entry) => (
+                <div key={entry.id} className="bg-white rounded-lg shadow-md p-6">
+                  {editingAwarenessId === entry.id ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input
+                        type="text"
+                        defaultValue={entry.month}
+                        onChange={(e) => (entry.month = e.target.value)}
+                        className="border rounded-md px-3 py-2"
+                        aria-label="Edit Month"
+                      />
+                      <input
+                        type="text"
+                        defaultValue={entry.theme}
+                        onChange={(e) => (entry.theme = e.target.value)}
+                        className="border rounded-md px-3 py-2"
+                        aria-label="Edit Theme"
+                      />
+                      <input
+                        type="text"
+                        defaultValue={entry.message}
+                        onChange={(e) => (entry.message = e.target.value)}
+                        className="border rounded-md px-3 py-2 md:col-span-2"
+                        aria-label="Edit Message"
+                      />
+                      <input
+                        type="url"
+                        defaultValue={entry.resource_url ?? ''}
+                        onChange={(e) => (entry.resource_url = e.target.value)}
+                        className="border rounded-md px-3 py-2 md:col-span-2"
+                        aria-label="Edit Resource URL"
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                          onClick={() => {
+                            setAwarenessEntries((prev) => prev.map((a) => (a.id === entry.id ? entry : a)));
+                            setEditingAwarenessId(null);
+                            // TODO: Supabase update goes here
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="bg-gray-100 text-su-black px-4 py-2 rounded-md hover:bg-gray-200"
+                          onClick={() => setEditingAwarenessId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="md:flex md:items-center md:justify-between">
+                      <div>
+                        <p className="text-sm text-su-black/70">{entry.month}</p>
+                        <h3 className="text-lg font-semibold text-su-blue">{entry.theme}</h3>
+                        <p className="text-gray-700 mt-2">{entry.message}</p>
+                        {entry.resource_url && (
+                          <a
+                            href={entry.resource_url}
+                            className="inline-block mt-2 text-sm font-medium text-su-blue hover:underline"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Learn More
+                          </a>
+                        )}
+                      </div>
+                      <div className="flex gap-2 mt-4 md:mt-0">
+                        <button
+                          className="bg-white text-su-blue border border-su-blue px-4 py-2 rounded-md hover:bg-blue-50"
+                          onClick={() => setEditingAwarenessId(entry.id)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="bg-su-red text-white px-4 py-2 rounded-md hover:bg-red-600"
+                          onClick={() => {
+                            setAwarenessEntries((prev) => prev.filter((a) => a.id !== entry.id));
+                            // TODO: Supabase delete goes here
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}

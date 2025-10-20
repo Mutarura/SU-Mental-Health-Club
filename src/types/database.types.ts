@@ -74,3 +74,15 @@ export type Admin = {
   role: string;
   created_at: string;
 };
+
+// Add Monthly Awareness type
+export type MonthlyAwareness = {
+  id: string;
+  month: string;
+  theme: string;
+  message: string;
+  resource_url?: string;
+  icon?: 'sun' | 'heart' | 'lightbulb' | 'balance' | 'chat' | 'people';
+  created_at?: string;
+  updated_at?: string;
+};
