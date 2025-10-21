@@ -2,7 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   eslint: {
-    ignoreDuringBuilds: true, // ✅ Prevents build from failing due to lint errors
+    ignoreDuringBuilds: true, // ✅ Don't block builds for lint errors
+  },
+  experimental: {
+    optimizeCss: false, // 🚫 Disable LightningCSS optimization
   },
 };
 
