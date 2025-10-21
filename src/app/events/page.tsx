@@ -180,9 +180,6 @@ export default function EventsPage() {
                     </div>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3 flex items-center">
-                    <span className="w-8 h-8 rounded-full bg-su-blue flex items-center justify-center mr-2">
-                      <CalendarIcon className="w-5 h-5 text-white" />
-                    </span>
                     {event.title}
                   </h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">{event.description}</p>
