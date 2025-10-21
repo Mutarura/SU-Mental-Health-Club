@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { CouncilLeader } from '../../types/database.types';
+import type { User } from '@supabase/supabase-js';
 import {
   LightbulbIcon,
   HeartIcon,
@@ -43,6 +43,8 @@ export default function AboutPage() {
   });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchLeaders = async () => {
@@ -88,11 +90,83 @@ export default function AboutPage() {
       }
     };
 
+    // Check if user is authenticated and is an admin via user_metadata
+    const checkUser = async () => {
+      if (!supabase) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user || null);
+      setIsAdmin(Boolean(user?.user_metadata?.role === 'admin'));
+    };
+
+    // Subscribe to real-time updates for council_leaders
+    const subscribeRealtime = () => {
+      if (!supabase) return;
+      const channel = supabase
+        .channel('council_leaders_changes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'council_leaders' }, (payload: any) => {
+          const l = payload.new as CouncilLeader;
+          const role = l.role as Role;
+          if (!ROLES.includes(role)) return;
+          setLeaders((prev) => ({ ...prev, [role]: l }));
+          setForms((prev) => ({
+            ...prev,
+            [role]: {
+              name: l.name || '',
+              email: l.email || '',
+              bio: l.bio || '',
+              year: l.year || '',
+              linkedin_url: l.linkedin_url || '',
+              photo_url: l.photo_url || '',
+            },
+          }));
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'council_leaders' }, (payload: any) => {
+          const l = payload.new as CouncilLeader;
+          const role = l.role as Role;
+          if (!ROLES.includes(role)) return;
+          setLeaders((prev) => ({ ...prev, [role]: l }));
+          setForms((prev) => ({
+            ...prev,
+            [role]: {
+              name: l.name || '',
+              email: l.email || '',
+              bio: l.bio || '',
+              year: l.year || '',
+              linkedin_url: l.linkedin_url || '',
+              photo_url: l.photo_url || '',
+            },
+          }));
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'council_leaders' }, (payload: any) => {
+          const l = payload.old as CouncilLeader;
+          const role = l.role as Role;
+          if (!ROLES.includes(role)) return;
+          setLeaders((prev) => ({ ...prev, [role]: null }));
+          setForms((prev) => ({
+            ...prev,
+            [role]: { name: '', email: '', bio: '', year: '', linkedin_url: '', photo_url: '' },
+          }));
+        })
+        .subscribe();
+
+      return () => {
+        if (supabase) supabase.removeChannel(channel);
+      };
+    };
+
     fetchLeaders();
+    checkUser();
+    const cleanup = subscribeRealtime();
+    return cleanup;
   }, []);
 
   const saveLeader = async (role: Role) => {
     if (!supabase) return;
+    if (!user || !isAdmin) {
+      setMessage('You must be an admin to make changes');
+      return;
+    }
+    
     const form = forms[role];
     setMessage('');
     try {
@@ -149,6 +223,11 @@ export default function AboutPage() {
 
   const deleteLeader = async (role: Role) => {
     if (!supabase || !leaders[role]) return;
+    if (!user || !isAdmin) {
+      setMessage('You must be an admin to make changes');
+      return;
+    }
+    
     if (!confirm(`Delete ${role}?`)) return;
     setMessage('');
     try {
@@ -188,17 +267,10 @@ export default function AboutPage() {
       <header className="max-w-6xl mx-auto px-4 pt-16 pb-10 text-center">
         <div className="flex items-center justify-center gap-4 mb-6">
           <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center">
-            <Image
-              src="/strathmore-logo.png"
-              alt="Strathmore University"
-              width={40}
-              height={40}
-              className="rounded-full"
-              priority
-            />
+            {/* Replace logo with icon */}
+            <BalanceIcon className="w-8 h-8 text-yellow-500" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 flex items-center">
-            <BalanceIcon className="w-7 h-7 text-yellow-500 mr-2" />
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
             Strathmore Mental Health Club
           </h1>
         </div>
@@ -262,6 +334,12 @@ export default function AboutPage() {
             <h2 className="text-2xl font-bold text-gray-900">Club Council</h2>
           </div>
 
+          {!isAdmin && (
+            <div className="mb-6 p-3 rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200">
+              Admins can manage club council in the <a href="/admin" className="underline">Admin Dashboard</a>.
+            </div>
+          )}
+
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
@@ -301,12 +379,14 @@ export default function AboutPage() {
                           <div className="mt-1">{roleBadge(role)}</div>
                         </div>
                       </div>
-                      <button
-                        className="text-sm px-3 py-1 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200"
-                        onClick={() => setShowEdit((prev) => ({ ...prev, [role]: !prev[role] }))}
-                      >
-                        {showEdit[role] ? 'Close' : leader ? 'Edit' : 'Add'}
-                      </button>
+                      {isAdmin && (
+                        <button
+                          className="text-sm px-3 py-1 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200"
+                          onClick={() => setShowEdit((prev) => ({ ...prev, [role]: !prev[role] }))}
+                        >
+                          {showEdit[role] ? 'Close' : leader ? 'Edit' : 'Add'}
+                        </button>
+                      )}
                     </div>
 
                     {!showEdit[role] ? (
