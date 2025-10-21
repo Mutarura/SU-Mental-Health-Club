@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { HeartIcon } from '../../components/icons';
+import Image from 'next/image';
 
 export default function Hero() {
   return (
@@ -29,12 +29,13 @@ export default function Hero() {
             </div>
           </div>
           <div className="hidden md:flex md:w-1/2 items-center justify-center">
-            <div className="w-full max-w-md aspect-square bg-gradient-to-b from-su-gold to-white/20 rounded-2xl border-4 border-white/20 flex items-center justify-center backdrop-blur-sm mt-8 md:mt-0 shadow-2xl">
-              <div className="text-center">
-                <HeartIcon className="w-32 h-32 text-su-red mx-auto mb-6" />
-                <p className="text-su-blue text-lg font-bold">Mental Wellness</p>
-                <p className="text-gray-700 text-sm mt-2">Community Support</p>
-              </div>
+            <div className="w-full max-w-md aspect-square rounded-2xl flex items-center justify-center mt-8 md:mt-0">
+              <Image
+                src="/mental-health-club-logo.png.png"
+                alt="SU Mental Health Club Logo"
+                width={600}
+                height={500}
+              />
             </div>
           </div>
         </div>

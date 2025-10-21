@@ -319,7 +319,7 @@ export default function AboutPage() {
               <h2 className="text-xl font-semibold text-gray-900">Collaboration</h2>
             </div>
             <p className="text-gray-700">
-              We collaborate with the Strathmore Medical Centre and Student Affairs to ensure both peer support and
+              We collaborate with the Strathmore Medical Centre for professional services and Student Affairs to ensure both peer support and
               professional referrals when needed.
             </p>
           </div>
@@ -392,6 +392,20 @@ export default function AboutPage() {
               })}
             </div>
           )}
+        </section>
+
+        {/* Contact Us Section */}
+        <section className="text-center py-12 bg-white rounded-lg shadow-xl border border-gray-200 mx-auto max-w-4xl mt-8">
+          <h2 className="text-3xl font-bold text-su-blue mb-4">Get Involved!</h2>
+          <p className="text-gray-700 max-w-2xl mx-auto mb-6">
+            Have questions, suggestions, or want to join our team? Reach out to us!
+          </p>
+          <a
+            href="mailto:mentalhealthclub@strathmore.edu"
+            className="inline-block bg-su-red text-white px-8 py-3 rounded-md text-lg font-medium hover:bg-red-700 transition-colors shadow-lg"
+          >
+            Contact Us
+          </a>
         </section>
       </main>
     </div>
