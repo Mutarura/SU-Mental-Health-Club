@@ -166,16 +166,13 @@ export default function ResourcesPage() {
             <div key={resource.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               <div className="p-6">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-su-red bg-opacity-10 rounded-full flex items-center justify-center mr-3">
+                  <div className="w-10 h-10 bg-su-blue rounded-full flex items-center justify-center mr-3">
                     {getCategoryIcon(resource.category)}
                   </div>
-                  <span className="text-sm font-medium text-su-red">{resource.category}</span>
+                  <span className="text-sm font-medium text-su-blue">{resource.category}</span>
                 </div>
 
-                <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
-                  <span className="w-8 h-8 rounded-full bg-su-red flex items-center justify-center mr-2">
-                    {getTitleIcon(resource.category)}
-                  </span>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
                   {resource.title}
                 </h3>
                 <p className="text-gray-600 mb-6 leading-relaxed">{resource.description}</p>

@@ -334,11 +334,7 @@ export default function AboutPage() {
             <h2 className="text-2xl font-bold text-gray-900">Club Council</h2>
           </div>
 
-          {!isAdmin && (
-            <div className="mb-6 p-3 rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200">
-              Admins can manage club council in the <a href="/admin" className="underline">Admin Dashboard</a>.
-            </div>
-          )}
+
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

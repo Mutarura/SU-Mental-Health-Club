@@ -12,6 +12,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Strathmore Mental Health Club",
   description: "Official website for the Strathmore University Mental Health Club",
+  icons: {
+    icon: "/strathmore-logo.png",
+    shortcut: "/strathmore-logo.png",
+    apple: "/strathmore-logo.png",
+  },
 };
 
 export default function RootLayout({

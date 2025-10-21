@@ -158,16 +158,8 @@ export default function EventsPage() {
                   ) : (
                     <div className="text-center">
                       <div className="w-32 h-32 bg-su-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        {/* Event type icons */}
-                        {event.title.toLowerCase().includes('workshop') ? (
-                          <LightbulbIcon className="w-16 h-16 text-white" />
-                        ) : event.title.toLowerCase().includes('meditation') || event.title.toLowerCase().includes('mindfulness') ? (
-                          <HeartIcon className="w-16 h-16 text-white" />
-                        ) : event.title.toLowerCase().includes('support') || event.title.toLowerCase().includes('group') ? (
-                          <PeopleIcon className="w-16 h-16 text-white" />
-                        ) : (
-                          <CalendarIcon className="w-16 h-16 text-white" />
-                        )}
+                        {/* Calendar icon for all events */}
+                        <CalendarIcon className="w-16 h-16 text-white" />
                       </div>
                       <p className="text-gray-500 text-sm mt-4">Event</p>
                     </div>
@@ -188,7 +180,7 @@ export default function EventsPage() {
                     </div>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3 flex items-center">
-                    <span className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center mr-2">
+                    <span className="w-8 h-8 rounded-full bg-su-blue flex items-center justify-center mr-2">
                       <CalendarIcon className="w-5 h-5 text-white" />
                     </span>
                     {event.title}
