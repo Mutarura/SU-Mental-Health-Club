@@ -66,6 +66,11 @@ const DEFAULT_EVENTS: Event[] = [
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  const handleImageError = (eventId: string) => {
+    setImageErrors((prevErrors) => ({ ...prevErrors, [eventId]: true }));
+  };
 
   useEffect(() => {
     fetchEvents();
@@ -149,11 +154,12 @@ export default function EventsPage() {
             {events.map((event) => (
               <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col md:flex-row">
                 <div className="md:w-1/3 h-64 bg-white rounded-lg flex items-center justify-center">
-                  {event.image_url ? (
+                  {event.image_url && !imageErrors[event.id] ? (
                     <img
                       src={event.image_url}
                       alt={event.title}
                       className="w-full h-full object-cover rounded-lg"
+                      onError={() => handleImageError(event.id)}
                     />
                   ) : (
                     <div className="text-center">

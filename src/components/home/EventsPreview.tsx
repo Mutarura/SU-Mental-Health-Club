@@ -9,6 +9,11 @@ import { CalendarIcon, LocationIcon } from '../../components/icons';
 export default function EventsPreview() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  const handleImageError = (eventId: string) => {
+    setImageErrors((prevErrors) => ({ ...prevErrors, [eventId]: true }));
+  };
 
   useEffect(() => {
     async function fetchEvents() {
@@ -41,7 +46,7 @@ export default function EventsPreview() {
   // Default events if none are available from the database
   const defaultEvents = [
     {
-      id: 1,
+      id: "1",
       title: "Mental Health Awareness Week",
       description: "A week-long series of events focused on raising awareness about mental health issues among university students. Join us for seminars, discussions, and resource sharing.",
       date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
@@ -49,7 +54,7 @@ export default function EventsPreview() {
       image_url: null,
     },
     {
-      id: 2,
+      id: "2",
       title: "Stress Management Workshop",
       description: "Learn effective techniques to manage academic stress and maintain well-being during exam periods. Expert facilitators will guide breathing exercises and mindfulness practices.",
       date: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString(),
@@ -57,7 +62,7 @@ export default function EventsPreview() {
       image_url: null,
     },
     {
-      id: 3,
+      id: "3",
       title: "Peer Support Circle",
       description: "A safe, confidential space for students to share experiences and support one another. No judgment, just community care and understanding.",
       date: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
@@ -101,11 +106,12 @@ export default function EventsPreview() {
               {displayEvents.map((event) => (
                 <div key={event.id} className="bg-gray-50 rounded-lg overflow-hidden shadow-md">
                   <div className="h-40 bg-white flex items-center justify-center">
-                    {event.image_url ? (
+                    {event.image_url && !imageErrors[event.id] ? (
                       <img
                         src={event.image_url}
                         alt={event.title}
                         className="w-full h-full object-cover"
+                        onError={() => handleImageError(event.id)}
                       />
                     ) : (
                       <div className="w-20 h-20 bg-su-blue rounded-full flex items-center justify-center shadow-md">
