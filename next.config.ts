@@ -2,13 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   eslint: {
-    ignoreDuringBuilds: true, // ✅ ignore linting
-  },
-  experimental: {
-    optimizeCss: false, // ✅ disable LightningCSS
+    ignoreDuringBuilds: true, // ✅ Don't fail builds due to ESLint issues
   },
   typescript: {
-    ignoreBuildErrors: true, // ✅ prevents minor TypeScript issues from blocking
+    ignoreBuildErrors: true, // ✅ Ignore TypeScript 'any' or unused var errors
+  },
+  experimental: {
+    optimizeCss: false, // ✅ Disable LightningCSS (we already fixed this)
   },
 };
 
