@@ -379,89 +379,18 @@ export default function AboutPage() {
                           <div className="mt-1">{roleBadge(role)}</div>
                         </div>
                       </div>
-                      {isAdmin && (
-                        <button
-                          className="text-sm px-3 py-1 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200"
-                          onClick={() => setShowEdit((prev) => ({ ...prev, [role]: !prev[role] }))}
-                        >
-                          {showEdit[role] ? 'Close' : leader ? 'Edit' : 'Add'}
-                        </button>
-                      )}
                     </div>
 
-                    {!showEdit[role] ? (
-                      <div className="space-y-2 text-sm text-gray-700">
-                        {leader?.email && <p>Email: {leader.email}</p>}
-                        {leader?.year && <p>Year: {leader.year}</p>}
-                        {leader?.linkedin_url && (
-                          <a href={leader.linkedin_url} target="_blank" rel="noreferrer" className="text-su-blue hover:underline">
-                            LinkedIn Profile
-                          </a>
-                        )}
-                        {leader?.bio && <p className="mt-2">{leader.bio}</p>}
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <input
-                          type="text"
-                          className="w-full border rounded-md px-3 py-2"
-                          placeholder="Full Name"
-                          value={form.name}
-                          onChange={(e) => setForms((p) => ({ ...p, [role]: { ...p[role], name: e.target.value } }))}
-                        />
-                        <input
-                          type="email"
-                          className="w-full border rounded-md px-3 py-2"
-                          placeholder="Email"
-                          value={form.email}
-                          onChange={(e) => setForms((p) => ({ ...p, [role]: { ...p[role], email: e.target.value } }))}
-                        />
-                        <input
-                          type="text"
-                          className="w-full border rounded-md px-3 py-2"
-                          placeholder="Academic Year (e.g., 3rd Year)"
-                          value={form.year}
-                          onChange={(e) => setForms((p) => ({ ...p, [role]: { ...p[role], year: e.target.value } }))}
-                        />
-                        <input
-                          type="url"
-                          className="w-full border rounded-md px-3 py-2"
-                          placeholder="LinkedIn URL"
-                          value={form.linkedin_url}
-                          onChange={(e) => setForms((p) => ({ ...p, [role]: { ...p[role], linkedin_url: e.target.value } }))}
-                        />
-                        <input
-                          type="url"
-                          className="w-full border rounded-md px-3 py-2"
-                          placeholder="Photo URL"
-                          value={form.photo_url}
-                          onChange={(e) => setForms((p) => ({ ...p, [role]: { ...p[role], photo_url: e.target.value } }))}
-                        />
-                        <textarea
-                          className="w-full border rounded-md px-3 py-2"
-                          rows={3}
-                          placeholder="Short bio"
-                          value={form.bio}
-                          onChange={(e) => setForms((p) => ({ ...p, [role]: { ...p[role], bio: e.target.value } }))}
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                            onClick={() => saveLeader(role)}
-                          >
-                            Save
-                          </button>
-                          {leader && (
-                            <button
-                              className="bg-su-red text-white px-4 py-2 rounded-md hover:bg-red-600"
-                              onClick={() => deleteLeader(role)}
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    <div className="space-y-2 text-sm text-gray-700">
+                      {leader?.email && <p>Email: {leader.email}</p>}
+                      {leader?.year && <p>Year: {leader.year}</p>}
+                      {leader?.linkedin_url && (
+                        <a href={leader.linkedin_url} target="_blank" rel="noreferrer" className="text-su-blue hover:underline">
+                          LinkedIn Profile
+                        </a>
+                      )}
+                      {leader?.bio && <p className="mt-2">{leader.bio}</p>}
+                    </div>
                   </div>
                 );
               })}

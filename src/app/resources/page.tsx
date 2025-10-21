@@ -76,11 +76,13 @@ const DEFAULT_RESOURCES: Resource[] = [
 const getCategoryIcon = (category: string) => {
   const lowerCategory = category.toLowerCase();
   if (lowerCategory.includes('article') || lowerCategory.includes('blog')) {
-    return <DocumentIcon className="w-4 h-4 text-su-red" />;
+    return <DocumentIcon className="w-4 h-4 text-white" />;
+  } else if (lowerCategory.includes('podcast')) {
+    return <DocumentIcon className="w-4 h-4 text-white" />;
   } else if (lowerCategory.includes('guide') || lowerCategory.includes('help')) {
-    return <DocumentIcon className="w-4 h-4 text-su-red" />;
+    return <DocumentIcon className="w-4 h-4 text-white" />;
   } else {
-    return <BookIcon className="w-4 h-4 text-su-red" />;
+    return <BookIcon className="w-4 h-4 text-white" />;
   }
 };
 
@@ -171,7 +173,7 @@ export default function ResourcesPage() {
                 </div>
 
                 <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
-                  <span className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center mr-2">
+                  <span className="w-8 h-8 rounded-full bg-su-red flex items-center justify-center mr-2">
                     {getTitleIcon(resource.category)}
                   </span>
                   {resource.title}
