@@ -294,6 +294,107 @@ setShowCouncilLeaderForm(false);
     if (!error) setAwarenessEntries(data || DEFAULT_AWARENESS);
   };
 
+  const editAwareness = (entry: any) => {
+    setEditingAwarenessId(entry.id);
+    setNewAwareness({
+      month: entry.month || '',
+      theme: entry.theme || '',
+      message: entry.message || '',
+      resource_url: entry.resource_url || '',
+      icon: entry.icon || 'sun',
+      banner_url: entry.banner_url || '',
+      caption: entry.caption || ''
+    });
+    setShowAwarenessForm(true);
+  };
+
+  const handleAwarenessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) {
+      setMessage('Database not configured');
+      return;
+    }
+
+    try {
+      if (editingAwarenessId) {
+        const { error } = await supabase
+          .from('monthly_awareness')
+          .update({
+            month: newAwareness.month,
+            theme: newAwareness.theme,
+            message: newAwareness.message,
+            resource_url: newAwareness.resource_url || null,
+            icon: newAwareness.icon,
+            banner_url: newAwareness.banner_url || null,
+            caption: newAwareness.caption || null,
+          })
+          .eq('id', editingAwarenessId);
+
+        if (!error) {
+          setAwarenessEntries((prev) =>
+            prev.map((a) =>
+              a.id === editingAwarenessId
+                ? { ...a, ...newAwareness }
+                : a
+            )
+          );
+          setMessage('Awareness entry updated successfully!');
+          setEditingAwarenessId(null);
+          setShowAwarenessForm(false);
+          await fetchStats();
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('monthly_awareness')
+          .insert([{
+            month: newAwareness.month,
+            theme: newAwareness.theme,
+            message: newAwareness.message,
+            resource_url: newAwareness.resource_url || null,
+            icon: newAwareness.icon,
+            banner_url: newAwareness.banner_url || null,
+            caption: newAwareness.caption || null,
+          }])
+          .select();
+
+        if (!error && data) {
+          setAwarenessEntries([data[0], ...awarenessEntries]);
+          setMessage('Awareness entry added successfully!');
+          setShowAwarenessForm(false);
+          await fetchStats();
+        }
+      }
+
+      setNewAwareness({
+        month: '',
+        theme: '',
+        message: '',
+        resource_url: '',
+        icon: 'sun',
+        banner_url: '',
+        caption: ''
+      });
+    } catch {
+      setMessage('Error saving awareness entry');
+    }
+  };
+
+  const deleteAwareness = async (id: string) => {
+    if (!supabase) return;
+    if (confirm('Are you sure you want to delete this awareness entry?')) {
+      const { error } = await supabase
+        .from('monthly_awareness')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        setAwarenessEntries((prev) => prev.filter((a) => a.id !== id));
+        setMessage('Awareness entry deleted successfully!');
+        await fetchStats();
+      }
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchStats();
@@ -782,6 +883,7 @@ setShowCouncilLeaderForm(false);
   }
 
   return (
+    <><div className="min-h-screen bg-gray-100">
       {/* Header */}
       <div className="bg-su-blue shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -818,11 +920,9 @@ setShowCouncilLeaderForm(false);
             ].map((tab) => (
               <button
                 key={tab.id}
-                className={`flex items-center ${
-                  activeTab === tab.id
+                className={`flex items-center ${activeTab === tab.id
                     ? 'border-blue-600 text-black bg-blue-50'
-                    : 'border-transparent text-black hover:text-black hover:border-gray-400 hover:bg-gray-50'
-                } whitespace-nowrap py-4 px-3 border-b-2 font-medium text-sm transition-colors`}
+                    : 'border-transparent text-black hover:text-black hover:border-gray-400 hover:bg-gray-50'} whitespace-nowrap py-4 px-3 border-b-2 font-medium text-sm transition-colors`}
                 onClick={() => setActiveTab(tab.id)}
               >
                 {tab.icon}
@@ -898,7 +998,7 @@ setShowCouncilLeaderForm(false);
                   setShowQuoteForm(true);
                   setEditingItem(null);
                   setQuoteForm({ text: '', author: '' });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Quote
@@ -918,8 +1018,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setQuoteForm({ ...quoteForm, text: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
                       rows={3}
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
@@ -928,8 +1027,7 @@ setShowCouncilLeaderForm(false);
                       value={quoteForm.author}
                       onChange={(e) => setQuoteForm({ ...quoteForm, author: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required
-                    />
+                      required />
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -943,7 +1041,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowQuoteForm(false);
                         setEditingItem(null);
-                      }}
+                      } }
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                     >
                       Cancel
@@ -999,7 +1097,7 @@ setShowCouncilLeaderForm(false);
                   setShowEventForm(true);
                   setEditingItem(null);
                   setEventForm({ title: '', slug: '', description: '', start: '', end: '', location: '', calendar_link: '', image_url: '' });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Event
@@ -1019,8 +1117,7 @@ setShowCouncilLeaderForm(false);
                       value={eventForm.title}
                       onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -1029,8 +1126,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                       rows={3}
-                      required
-                    />
+                      required />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1040,8 +1136,7 @@ setShowCouncilLeaderForm(false);
                         value={eventForm.start}
                         onChange={(e) => setEventForm({ ...eventForm, start: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                        required
-                      />
+                        required />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
@@ -1050,8 +1145,7 @@ setShowCouncilLeaderForm(false);
                         value={eventForm.location}
                         onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                        required
-                      />
+                        required />
                     </div>
                   </div>
                   <div>
@@ -1060,8 +1154,7 @@ setShowCouncilLeaderForm(false);
                       type="url"
                       value={eventForm.image_url}
                       onChange={(e) => setEventForm({ ...eventForm, image_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -1075,7 +1168,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowEventForm(false);
                         setEditingItem(null);
-                      }}
+                      } }
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                     >
                       Cancel
@@ -1135,7 +1228,7 @@ setShowCouncilLeaderForm(false);
                   setShowResourceForm(true);
                   setEditingItem(null);
                   setResourceForm({ title: '', category: 'article', url_or_storage_path: '', tags: [], description: '', image_url: '' });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Resource
@@ -1155,8 +1248,7 @@ setShowCouncilLeaderForm(false);
                       value={resourceForm.title}
                       onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -1181,8 +1273,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                       rows={3}
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-black mb-1">URL or Storage Path</label>
@@ -1192,8 +1283,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setResourceForm({ ...resourceForm, url_or_storage_path: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="https://example.com/article OR /files/guide.pdf"
-                      required
-                    />
+                      required />
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -1207,7 +1297,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowResourceForm(false);
                         setEditingItem(null);
-                      }}
+                      } }
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                     >
                       Cancel
@@ -1263,7 +1353,7 @@ setShowCouncilLeaderForm(false);
                   setShowCouncilLeaderForm(true);
                   setEditingItem(null);
                   setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Council Leader
@@ -1283,8 +1373,7 @@ setShowCouncilLeaderForm(false);
                       value={councilLeaderForm.name}
                       onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, name: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
@@ -1293,8 +1382,7 @@ setShowCouncilLeaderForm(false);
                       value={councilLeaderForm.role}
                       onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, role: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
@@ -1303,8 +1391,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, bio: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                       rows={3}
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
@@ -1313,8 +1400,7 @@ setShowCouncilLeaderForm(false);
                       value={councilLeaderForm.year}
                       onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, year: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -1323,8 +1409,7 @@ setShowCouncilLeaderForm(false);
                       value={councilLeaderForm.email}
                       onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, email: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL (optional)</label>
@@ -1332,8 +1417,7 @@ setShowCouncilLeaderForm(false);
                       type="url"
                       value={councilLeaderForm.linkedin_url}
                       onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, linkedin_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL (optional)</label>
@@ -1341,8 +1425,7 @@ setShowCouncilLeaderForm(false);
                       type="url"
                       value={councilLeaderForm.photo_url}
                       onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, photo_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -1356,7 +1439,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowCouncilLeaderForm(false);
                         setEditingItem(null);
-                      }}
+                      } }
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                     >
                       Cancel
@@ -1422,7 +1505,7 @@ setShowCouncilLeaderForm(false);
                     banner_url: '',
                     caption: ''
                   });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Awareness Entry
@@ -1442,8 +1525,7 @@ setShowCouncilLeaderForm(false);
                       value={newAwareness.month}
                       onChange={(e) => setNewAwareness({ ...newAwareness, month: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
@@ -1452,8 +1534,7 @@ setShowCouncilLeaderForm(false);
                       value={newAwareness.theme}
                       onChange={(e) => setNewAwareness({ ...newAwareness, theme: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
@@ -1462,8 +1543,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setNewAwareness({ ...newAwareness, message: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                       rows={3}
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Resource URL (optional)</label>
@@ -1471,8 +1551,7 @@ setShowCouncilLeaderForm(false);
                       type="url"
                       value={newAwareness.resource_url}
                       onChange={(e) => setNewAwareness({ ...newAwareness, resource_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
@@ -1495,8 +1574,7 @@ setShowCouncilLeaderForm(false);
                       type="url"
                       value={newAwareness.banner_url}
                       onChange={(e) => setNewAwareness({ ...newAwareness, banner_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Caption (optional)</label>
@@ -1504,8 +1582,7 @@ setShowCouncilLeaderForm(false);
                       type="text"
                       value={newAwareness.caption}
                       onChange={(e) => setNewAwareness({ ...newAwareness, caption: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -1519,7 +1596,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowAwarenessForm(false);
                         setEditingAwarenessId(null);
-                      }}
+                      } }
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                     >
                       Cancel
@@ -1566,8 +1643,7 @@ setShowCouncilLeaderForm(false);
         )}
 
       </div>
-    </div>
-      <div className="bg-su-blue shadow">
+    </div><div className="bg-su-blue shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <h1 className="text-white text-xl font-bold">Admin Dashboard</h1>
@@ -1579,9 +1655,7 @@ setShowCouncilLeaderForm(false);
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      </div><div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 
         {message && (
           <div className="mb-6 p-4 rounded-md bg-green-50 text-green-700 border border-green-200">
@@ -1602,11 +1676,9 @@ setShowCouncilLeaderForm(false);
             ].map((tab) => (
               <button
                 key={tab.id}
-                className={`flex items-center ${
-                  activeTab === tab.id
+                className={`flex items-center ${activeTab === tab.id
                     ? 'border-blue-600 text-black bg-blue-50'
-                    : 'border-transparent text-black hover:text-black hover:border-gray-400 hover:bg-gray-50'
-                } whitespace-nowrap py-4 px-3 border-b-2 font-medium text-sm transition-colors`}
+                    : 'border-transparent text-black hover:text-black hover:border-gray-400 hover:bg-gray-50'} whitespace-nowrap py-4 px-3 border-b-2 font-medium text-sm transition-colors`}
                 onClick={() => setActiveTab(tab.id)}
               >
                 {tab.icon}
@@ -1682,7 +1754,7 @@ setShowCouncilLeaderForm(false);
                   setShowQuoteForm(true);
                   setEditingItem(null);
                   setQuoteForm({ text: '', author: '' });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Quote
@@ -1702,8 +1774,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setQuoteForm({ ...quoteForm, text: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
                       rows={3}
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
@@ -1712,8 +1783,7 @@ setShowCouncilLeaderForm(false);
                       value={quoteForm.author}
                       onChange={(e) => setQuoteForm({ ...quoteForm, author: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required
-                    />
+                      required />
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -1727,7 +1797,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowQuoteForm(false);
                         setEditingItem(null);
-                      }}
+                      } }
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                     >
                       Cancel
@@ -1783,7 +1853,7 @@ setShowCouncilLeaderForm(false);
                   setShowEventForm(true);
                   setEditingItem(null);
                   setEventForm({ title: '', slug: '', description: '', start: '', end: '', location: '', calendar_link: '', image_url: '' });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Event
@@ -1803,8 +1873,7 @@ setShowCouncilLeaderForm(false);
                       value={eventForm.title}
                       onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -1813,8 +1882,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                       rows={3}
-                      required
-                    />
+                      required />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1824,8 +1892,7 @@ setShowCouncilLeaderForm(false);
                         value={eventForm.start}
                         onChange={(e) => setEventForm({ ...eventForm, start: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                        required
-                      />
+                        required />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
@@ -1834,8 +1901,7 @@ setShowCouncilLeaderForm(false);
                         value={eventForm.location}
                         onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                        required
-                      />
+                        required />
                     </div>
                   </div>
                   <div>
@@ -1844,8 +1910,7 @@ setShowCouncilLeaderForm(false);
                       type="url"
                       value={eventForm.image_url}
                       onChange={(e) => setEventForm({ ...eventForm, image_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -1859,7 +1924,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowEventForm(false);
                         setEditingItem(null);
-                      }}
+                      } }
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                     >
                       Cancel
@@ -1919,7 +1984,7 @@ setShowCouncilLeaderForm(false);
                   setShowResourceForm(true);
                   setEditingItem(null);
                   setResourceForm({ title: '', category: 'article', url_or_storage_path: '', tags: [], description: '', image_url: '' });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Resource
@@ -1939,8 +2004,7 @@ setShowCouncilLeaderForm(false);
                       value={resourceForm.title}
                       onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -1965,8 +2029,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                       rows={3}
-                      required
-                    />
+                      required />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-black mb-1">URL or Storage Path</label>
@@ -1976,8 +2039,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setResourceForm({ ...resourceForm, url_or_storage_path: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="https://example.com/article OR /files/guide.pdf"
-                      required
-                    />
+                      required />
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -1991,7 +2053,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowResourceForm(false);
                         setEditingItem(null);
-                      }}
+                      } }
                       className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                     >
                       Cancel
@@ -2044,39 +2106,36 @@ setShowCouncilLeaderForm(false);
         {activeTab === 'about' && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Manage About Content</h2>
-            
+
             {/* aboutContent state removed; nothing to render here */}
-              <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Mission Text</h3>
-                  <textarea
-                    value={''}
-                    onChange={(e) => handleAboutUpdate('mission_text', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    rows={4}
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Story Text</h3>
-                  <textarea
-                    value={''}
-                    onChange={(e) => handleAboutUpdate('story_text', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    rows={6}
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Collaboration Note</h3>
-                  <textarea
-                    value={''}
-                    onChange={(e) => handleAboutUpdate('collaboration_note', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    rows={4}
-                  />
-                </div>
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-4">Mission Text</h3>
+                <textarea
+                  value={''}
+                  onChange={(e) => handleAboutUpdate('mission_text', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
+                  rows={4} />
               </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-4">Story Text</h3>
+                <textarea
+                  value={''}
+                  onChange={(e) => handleAboutUpdate('story_text', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
+                  rows={6} />
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-4">Collaboration Note</h3>
+                <textarea
+                  value={''}
+                  onChange={(e) => handleAboutUpdate('collaboration_note', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
+                  rows={4} />
+              </div>
+            </div>
             )}
           </div>
         )}
@@ -2090,7 +2149,7 @@ setShowCouncilLeaderForm(false);
                   setShowCouncilLeaderForm(true);
                   setEditingItem(null);
                   setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
-                }}
+                } }
                 className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
               >
                 Add New Member
@@ -2110,8 +2169,7 @@ setShowCouncilLeaderForm(false);
                         required
                         value={councilLeaderForm.name}
                         onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
@@ -2121,8 +2179,7 @@ setShowCouncilLeaderForm(false);
                         value={councilLeaderForm.role}
                         onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, role: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                        placeholder="e.g., President, Vice President, Secretary"
-                      />
+                        placeholder="e.g., President, Vice President, Secretary" />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2134,8 +2191,7 @@ setShowCouncilLeaderForm(false);
                         value={councilLeaderForm.year}
                         onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, year: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                        placeholder="e.g., 4th Year Psychology"
-                      />
+                        placeholder="e.g., 4th Year Psychology" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -2144,8 +2200,7 @@ setShowCouncilLeaderForm(false);
                         required
                         value={councilLeaderForm.email}
                         onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                      />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
                     </div>
                   </div>
                   <div>
@@ -2156,8 +2211,7 @@ setShowCouncilLeaderForm(false);
                       onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, bio: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
                       rows={4}
-                      placeholder="Brief biography and background"
-                    />
+                      placeholder="Brief biography and background" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -2167,8 +2221,7 @@ setShowCouncilLeaderForm(false);
                         value={councilLeaderForm.linkedin_url}
                         onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, linkedin_url: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                        placeholder="https://linkedin.com/in/username"
-                      />
+                        placeholder="https://linkedin.com/in/username" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL (Optional)</label>
@@ -2177,8 +2230,7 @@ setShowCouncilLeaderForm(false);
                         value={councilLeaderForm.photo_url}
                         onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, photo_url: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                        placeholder="https://example.com/photo.jpg"
-                      />
+                        placeholder="https://example.com/photo.jpg" />
                     </div>
                   </div>
                   <div className="flex space-x-4">
@@ -2193,7 +2245,7 @@ setShowCouncilLeaderForm(false);
                       onClick={() => {
                         setShowCouncilLeaderForm(false);
                         setEditingItem(null);
-                      }}
+                      } }
                       className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
                     >
                       Cancel
@@ -2206,594 +2258,579 @@ setShowCouncilLeaderForm(false);
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-          </div>
-        )}
-
-{activeTab === 'councilleaders' && (
-  <div>
-    <div className="flex justify-between items-center mb-6">
-      <h2 className="text-2xl font-bold text-black">Manage Council Leaders</h2>
-      <button
-        onClick={() => {
-          setShowCouncilLeaderForm(true);
-          setEditingItem(null);
-          setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
-        }}
-        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-      >
-        Add New Leader
-      </button>
-    </div>
-
-    {showCouncilLeaderForm && (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h3 className="text-lg font-semibold text-black mb-4">
-          {editingItem ? 'Edit Council Leader' : 'Add New Council Leader'}
-        </h3>
-        <form onSubmit={handleClubCouncilSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-black mb-1">Name</label>
-              <input
-                type="text"
-                required
-                value={councilLeaderForm.name}
-                onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-black mb-1">Role</label>
-              <input
-                type="text"
-                required
-                value={councilLeaderForm.role}
-                onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, role: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., President, Vice President, Secretary"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-black mb-1">Year</label>
-              <input
-                type="text"
-                required
-                value={councilLeaderForm.year}
-                onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, year: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., 4th Year Psychology"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-black mb-1">Email</label>
-              <input
-                type="email"
-                required
-                value={councilLeaderForm.email}
-                onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-black mb-1">Bio</label>
-            <textarea
-              required
-              value={councilLeaderForm.bio}
-              onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, bio: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              placeholder="Brief biography and background"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-black mb-1">LinkedIn URL (Optional)</label>
-              <input
-                type="url"
-                value={councilLeaderForm.linkedin_url}
-                onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, linkedin_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://linkedin.com/in/username"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-black mb-1">Photo URL (Optional)</label>
-              <input
-                type="url"
-                value={councilLeaderForm.photo_url}
-                onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, photo_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://example.com/photo.jpg"
-              />
-            </div>
-          </div>
-          <div className="flex space-x-4">
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-              {editingItem ? 'Update Leader' : 'Add Leader'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowCouncilLeaderForm(false);
-                setEditingItem(null);
-              }}
-              className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    )}
-
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Role</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {councilLeaders.map((leader) => (
-            <tr key={leader.id}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{leader.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{leader.role}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button onClick={() => editItem(leader, 'clubcouncil')} className="text-blue-600 hover:text-blue-900 mr-4">
-                  Edit
-                </button>
-                <button onClick={() => deleteClubCouncilMember(leader.id)} className="text-red-600 hover:text-red-900">
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
-
-        {/* Team Members Tab */}
-        {activeTab === 'team' && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Manage Team Members</h2>
-              <button
-                onClick={() => {
-                  setShowTeamMemberForm(true);
-                  setEditingItem(null);
-                  setTeamMemberForm({ name: '', role: '', bio: '', email: '', linkedin_url: '', photo_url: '' });
-                }}
-                className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Add New Team Member
-              </button>
-            </div>
-
-            {showTeamMemberForm && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  {editingItem ? 'Edit Team Member' : 'Add New Team Member'}
-                </h3>
-                <form onSubmit={handleTeamMemberSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                      <input
-                        type="text"
-                        required
-                        value={teamMemberForm.name}
-                        onChange={(e) => setTeamMemberForm({ ...teamMemberForm, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                      <input
-                        type="text"
-                        required
-                        value={teamMemberForm.role}
-                        onChange={(e) => setTeamMemberForm({ ...teamMemberForm, role: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                        placeholder="e.g., President, Treasurer, Counselor"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      required
-                      value={teamMemberForm.email}
-                      onChange={(e) => setTeamMemberForm({ ...teamMemberForm, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                    <textarea
-                      required
-                      value={teamMemberForm.bio}
-                      onChange={(e) => setTeamMemberForm({ ...teamMemberForm, bio: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                      rows={4}
-                      placeholder="Brief biography"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL (Optional)</label>
-                      <input
-                        type="url"
-                        value={teamMemberForm.linkedin_url}
-                        onChange={(e) => setTeamMemberForm({ ...teamMemberForm, linkedin_url: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                        placeholder="https://linkedin.com/in/username"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL (Optional)</label>
-                      <input
-                        type="url"
-                        value={teamMemberForm.photo_url}
-                        onChange={(e) => setTeamMemberForm({ ...teamMemberForm, photo_url: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                        placeholder="https://example.com/photo.jpg"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex space-x-4">
-                    <button
-                      type="submit"
-                      className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    >
-                      {editingItem ? 'Update Member' : 'Add Member'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-setShowCouncilLeaderForm(false);
-                        setEditingItem(null);
-                      }}
-                      className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {councilLeaders.map((member) => (
-                    <tr key={member.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {member.photo_url && (
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <Image
-                                className="h-10 w-10 rounded-full object-cover"
-                                src={member.photo_url}
-                                alt={member.name}
-                                width={40}
-                                height={40}
-                              />
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                  </tr>
+                                </tbody>
+                              </table>
                             </div>
-                          )}
-                          <div className={member.photo_url ? "ml-4" : ""}>
-                            <div className="text-sm font-medium text-gray-900">{member.name}</div>
-                            <div className="text-sm text-gray-500 max-w-xs truncate">{member.bio}</div>
                           </div>
+                        )}
+                    )}
+
+                    {activeTab === 'council' && (
+                      <div>
+                        <div className="flex justify-between items-center mb-6">
+                          <h2 className="text-2xl font-bold text-black">Manage Council Leaders</h2>
+                          <button
+                            onClick={() => {
+                              setShowCouncilLeaderForm(true);
+                              setEditingItem(null);
+                              setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
+                            } }
+                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                          >
+                            Add New Leader
+                          </button>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.role}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => editItem(member, 'team')}
-                          className="text-su-blue hover:text-blue-700 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteTeamMember(member.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
 
-        {/* Monthly Awareness Tab */}
-        {activeTab === 'awareness' && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Manage Monthly Awareness</h2>
+                        {showCouncilLeaderForm && (
+                          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                            <h3 className="text-lg font-semibold text-black mb-4">
+                              {editingItem ? 'Edit Council Leader' : 'Add New Council Leader'}
+                            </h3>
+                            <form onSubmit={handleClubCouncilSubmit} className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-black mb-1">Name</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={councilLeaderForm.name}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, name: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-black mb-1">Role</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={councilLeaderForm.role}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, role: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., President, Vice President, Secretary" />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-black mb-1">Year</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={councilLeaderForm.year}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, year: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="e.g., 4th Year Psychology" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-black mb-1">Email</label>
+                                  <input
+                                    type="email"
+                                    required
+                                    value={councilLeaderForm.email}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, email: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-black mb-1">Bio</label>
+                                <textarea
+                                  required
+                                  value={councilLeaderForm.bio}
+                                  onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, bio: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  rows={4}
+                                  placeholder="Brief biography and background" />
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-black mb-1">LinkedIn URL (Optional)</label>
+                                  <input
+                                    type="url"
+                                    value={councilLeaderForm.linkedin_url}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, linkedin_url: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="https://linkedin.com/in/username" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-black mb-1">Photo URL (Optional)</label>
+                                  <input
+                                    type="url"
+                                    value={councilLeaderForm.photo_url}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, photo_url: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="https://example.com/photo.jpg" />
+                                </div>
+                              </div>
+                              <div className="flex space-x-4">
+                                <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                                  {editingItem ? 'Update Leader' : 'Add Leader'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setShowCouncilLeaderForm(false);
+                                    setEditingItem(null);
+                                  } }
+                                  className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        )}
 
-            {/* Add New Entry */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h3 className="text-lg font-semibold text-su-blue mb-4">Add Awareness Entry</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  value={newAwareness.month}
-                  onChange={(e) => setNewAwareness({ ...newAwareness, month: e.target.value })}
-                  placeholder="Month e.g., January"
-                  className="border rounded-md px-3 py-2"
-                  aria-label="Month"
-                />
-                <input
-                  type="text"
-                  value={newAwareness.theme}
-                  onChange={(e) => setNewAwareness({ ...newAwareness, theme: e.target.value })}
-                  placeholder="Theme e.g., Stress Awareness"
-                  className="border rounded-md px-3 py-2"
-                  aria-label="Theme"
-                />
-                <input
-                  type="text"
-                  value={newAwareness.message}
-                  onChange={(e) => setNewAwareness({ ...newAwareness, message: e.target.value })}
-                  placeholder="Supportive message"
-                  className="border rounded-md px-3 py-2 md:col-span-2"
-                  aria-label="Message"
-                />
-                <input
-                  type="url"
-                  value={newAwareness.resource_url ?? ''}
-                  onChange={(e) => setNewAwareness({ ...newAwareness, resource_url: e.target.value })}
-                  placeholder="Resource URL (optional)"
-                  className="border rounded-md px-3 py-2 md:col-span-2"
-                  aria-label="Resource URL"
-                />
-                <select
-                  value={newAwareness.icon}
-                  onChange={(e) => setNewAwareness({ ...newAwareness, icon: e.target.value as 'sun' })}
-                  className="border rounded-md px-3 py-2"
-                  aria-label="Icon"
-                >
-                  <option value="sun">Sun</option>
-                  <option value="heart">Heart</option>
-                  <option value="lightbulb">Lightbulb</option>
-                  <option value="balance">Balance</option>
-                  <option value="chat">Chat</option>
-                  <option value="people">People</option>
-                </select>
-              </div>
-              <button
-                  className="mt-4 bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                  onClick={async () => {
-                    if (!supabase) return;
-                    const payload = {
-                      month: newAwareness.month,
-                      theme: newAwareness.theme,
-                      message: newAwareness.message,
-                      resource_url: newAwareness.resource_url || null,
-                      icon: newAwareness.icon,
-                      banner_url: newAwareness.banner_url || null,
-                      caption: newAwareness.caption || null,
-                    };
-                    const { error } = await supabase.from('monthly_awareness').insert([payload]);
-                    if (!error) {
-                      setMessage('Awareness entry added successfully!');
-                      setNewAwareness({ month: '', theme: '', message: '', resource_url: '', icon: 'sun', banner_url: '', caption: '' });
-                      setShowAwarenessForm(false);
-                      fetchMonthlyAwareness();
-                      fetchStats();
-                    } else {
-                      setMessage('Error adding awareness entry');
-                    }
-                  }}
-                  aria-label="Add Awareness Entry"
-                >
-                Add Entry
-              </button>
-            </div>
+                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Role</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {councilLeaders.map((leader) => (
+                                <tr key={leader.id}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{leader.name}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-black">{leader.role}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button onClick={() => editItem(leader, 'clubcouncil')} className="text-blue-600 hover:text-blue-900 mr-4">
+                                      Edit
+                                    </button>
+                                    <button onClick={() => deleteClubCouncilMember(leader.id)} className="text-red-600 hover:text-red-900">
+                                      Delete
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
 
-            {/* Awareness List */}
-            <div className="space-y-4">
-              {awarenessEntries.map((entry) => (
-                <div key={entry.id} className="bg-white rounded-lg shadow-md p-6">
-                  {editingAwarenessId === entry.id ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        defaultValue={entry.month}
-                        onChange={(e) => (entry.month = e.target.value)}
-                        className="border rounded-md px-3 py-2"
-                        aria-label="Edit Month"
-                      />
-                      <input
-                        type="text"
-                        defaultValue={entry.theme}
-                        onChange={(e) => (entry.theme = e.target.value)}
-                        className="border rounded-md px-3 py-2"
-                        aria-label="Edit Theme"
-                      />
-                      <input
-                        type="text"
-                        defaultValue={entry.message}
-                        onChange={(e) => (entry.message = e.target.value)}
-                        className="border rounded-md px-3 py-2 md:col-span-2"
-                        aria-label="Edit Message"
-                      />
-                      <input
-                        type="url"
-                        defaultValue={entry.resource_url ?? ''}
-                        onChange={(e) => (entry.resource_url = e.target.value)}
-                        className="border rounded-md px-3 py-2 md:col-span-2"
-                        aria-label="Edit Resource URL"
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
+                    {/* Team Members Tab */}
+                    {activeTab === 'team' && (
+                      <div>
+                        <div className="flex justify-between items-center mb-6">
+                          <h2 className="text-2xl font-bold text-gray-900">Manage Team Members</h2>
+                          <button
+                            onClick={() => {
+                              setShowCouncilLeaderForm(true);
+                              setEditingItem(null);
+                              setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
+                            } }
                             className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                          >
+                            Add New Team Member
+                          </button>
+                        </div>
+
+                        {showCouncilLeaderForm && (
+                          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                            <h3 className="text-lg font-semibold mb-4">
+                              {editingItem ? 'Edit Team Member' : 'Add New Team Member'}
+                            </h3>
+                            <form onSubmit={handleClubCouncilSubmit} className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={councilLeaderForm.name}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, name: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                  <input
+                                    type="text"
+                                    required
+                                    value={councilLeaderForm.role}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, role: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
+                                    placeholder="e.g., President, Treasurer, Counselor" />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input
+                                  type="email"
+                                  required
+                                  value={councilLeaderForm.email}
+                                  onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, email: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                                <textarea
+                                  required
+                                  value={councilLeaderForm.bio}
+                                  onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, bio: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
+                                  rows={4}
+                                  placeholder="Brief biography" />
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL (Optional)</label>
+                                  <input
+                                    type="url"
+                                    value={councilLeaderForm.linkedin_url}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, linkedin_url: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
+                                    placeholder="https://linkedin.com/in/username" />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL (Optional)</label>
+                                  <input
+                                    type="url"
+                                    value={councilLeaderForm.photo_url}
+                                    onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, photo_url: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
+                                    placeholder="https://example.com/photo.jpg" />
+                                </div>
+                              </div>
+                              <div className="flex space-x-4">
+                                <button
+                                  type="submit"
+                                  className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                                >
+                                  {editingItem ? 'Update Member' : 'Add Member'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setShowCouncilLeaderForm(false);
+                                    setEditingItem(null);
+                                  } }
+                                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        )}
+
+                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Name
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Role
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Email
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  Actions
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {councilLeaders.map((member) => (
+                                <tr key={member.id}>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      {member.photo_url && (
+                                        <div className="flex-shrink-0 h-10 w-10">
+                                          <Image
+                                            className="h-10 w-10 rounded-full object-cover"
+                                            src={member.photo_url}
+                                            alt={member.name}
+                                            width={40}
+                                            height={40} />
+                                        </div>
+                                      )}
+                                      <div className={member.photo_url ? "ml-4" : ""}>
+                                        <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                                        <div className="text-sm text-gray-500 max-w-xs truncate">{member.bio}</div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.role}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{member.email}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button
+                                      onClick={() => editItem(member, 'team')}
+                                      className="text-su-blue hover:text-blue-700 mr-4"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      onClick={() => deleteTeamMember(member.id)}
+                                      className="text-red-600 hover:text-red-900"
+                                    >
+                                      Delete
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Monthly Awareness Tab */}
+                    {activeTab === 'awareness' && (
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Manage Monthly Awareness</h2>
+
+                        {/* Add New Entry */}
+                        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                          <h3 className="text-lg font-semibold text-su-blue mb-4">Add Awareness Entry</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input
+                              type="text"
+                              value={newAwareness.month}
+                              onChange={(e) => setNewAwareness({ ...newAwareness, month: e.target.value })}
+                              placeholder="Month e.g., January"
+                              className="border rounded-md px-3 py-2"
+                              aria-label="Month" />
+                            <input
+                              type="text"
+                              value={newAwareness.theme}
+                              onChange={(e) => setNewAwareness({ ...newAwareness, theme: e.target.value })}
+                              placeholder="Theme e.g., Stress Awareness"
+                              className="border rounded-md px-3 py-2"
+                              aria-label="Theme" />
+                            <input
+                              type="text"
+                              value={newAwareness.message}
+                              onChange={(e) => setNewAwareness({ ...newAwareness, message: e.target.value })}
+                              placeholder="Supportive message"
+                              className="border rounded-md px-3 py-2 md:col-span-2"
+                              aria-label="Message" />
+                            <input
+                              type="url"
+                              value={newAwareness.resource_url ?? ''}
+                              onChange={(e) => setNewAwareness({ ...newAwareness, resource_url: e.target.value })}
+                              placeholder="Resource URL (optional)"
+                              className="border rounded-md px-3 py-2 md:col-span-2"
+                              aria-label="Resource URL" />
+                            <select
+                              value={newAwareness.icon}
+                              onChange={(e) => setNewAwareness({ ...newAwareness, icon: e.target.value as 'sun' })}
+                              className="border rounded-md px-3 py-2"
+                              aria-label="Icon"
+                            >
+                              <option value="sun">Sun</option>
+                              <option value="heart">Heart</option>
+                              <option value="lightbulb">Lightbulb</option>
+                              <option value="balance">Balance</option>
+                              <option value="chat">Chat</option>
+                              <option value="people">People</option>
+                            </select>
+                          </div>
+                          <button
+                            className="mt-4 bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                             onClick={async () => {
                               if (!supabase) return;
-
-                              const { error } = await supabase
-                                .from('monthly_awareness')
-                                .update({
-                                  month: entry.month,
-                                  theme: entry.theme,
-                                  message: entry.message,
-                                  resource_url: entry.resource_url || null,
-                                  icon: entry.icon || 'sun',
-                                })
-                                .eq('id', entry.id);
-
+                              const payload = {
+                                month: newAwareness.month,
+                                theme: newAwareness.theme,
+                                message: newAwareness.message,
+                                resource_url: newAwareness.resource_url || null,
+                                icon: newAwareness.icon,
+                                banner_url: newAwareness.banner_url || null,
+                                caption: newAwareness.caption || null,
+                              };
+                              const { error } = await supabase.from('monthly_awareness').insert([payload]);
                               if (!error) {
-                                setAwarenessEntries((prev) => prev.map((a) => (a.id === entry.id ? entry : a)));
-                                setEditingAwarenessId(null);
-                                setMessage('Awareness entry updated successfully');
+                                setMessage('Awareness entry added successfully!');
+                                setNewAwareness({ month: '', theme: '', message: '', resource_url: '', icon: 'sun', banner_url: '', caption: '' });
+                                setShowAwarenessForm(false);
+                                fetchMonthlyAwareness();
+                                fetchStats();
                               } else {
-                                setMessage(error.message || 'Failed to update awareness entry');
+                                setMessage('Error adding awareness entry');
                               }
-                            }}
+                            } }
+                            aria-label="Add Awareness Entry"
                           >
-                          Save
-                        </button>
-                        <button
-                          className="bg-gray-100 text-su-black px-4 py-2 rounded-md hover:bg-gray-200"
-                          onClick={() => setEditingAwarenessId(null)}
-                        >
-                          Cancel
-                        </button>
+                            Add Entry
+                          </button>
+                        </div>
+
+                        {/* Awareness List */}
+                        <div className="space-y-4">
+                          {awarenessEntries.map((entry) => (
+                            <div key={entry.id} className="bg-white rounded-lg shadow-md p-6">
+                              {editingAwarenessId === entry.id ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <input
+                                    type="text"
+                                    defaultValue={entry.month}
+                                    onChange={(e) => (entry.month = e.target.value)}
+                                    className="border rounded-md px-3 py-2"
+                                    aria-label="Edit Month" />
+                                  <input
+                                    type="text"
+                                    defaultValue={entry.theme}
+                                    onChange={(e) => (entry.theme = e.target.value)}
+                                    className="border rounded-md px-3 py-2"
+                                    aria-label="Edit Theme" />
+                                  <input
+                                    type="text"
+                                    defaultValue={entry.message}
+                                    onChange={(e) => (entry.message = e.target.value)}
+                                    className="border rounded-md px-3 py-2 md:col-span-2"
+                                    aria-label="Edit Message" />
+                                  <input
+                                    type="url"
+                                    defaultValue={entry.resource_url ?? ''}
+                                    onChange={(e) => (entry.resource_url = e.target.value)}
+                                    className="border rounded-md px-3 py-2 md:col-span-2"
+                                    aria-label="Edit Resource URL" />
+                                  <div className="flex gap-2 mt-2">
+                                    <button
+                                      className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                                      onClick={async () => {
+                                        if (!supabase) return;
+
+                                        const { error } = await supabase
+                                          .from('monthly_awareness')
+                                          .update({
+                                            month: entry.month,
+                                            theme: entry.theme,
+                                            message: entry.message,
+                                            resource_url: entry.resource_url || null,
+                                            icon: entry.icon || 'sun',
+                                          })
+                                          .eq('id', entry.id);
+
+                                        if (!error) {
+                                          setAwarenessEntries((prev) => prev.map((a) => (a.id === entry.id ? entry : a)));
+                                          setEditingAwarenessId(null);
+                                          setMessage('Awareness entry updated successfully');
+                                        } else {
+                                          setMessage(error.message || 'Failed to update awareness entry');
+                                        }
+                                      } }
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      className="bg-gray-100 text-su-black px-4 py-2 rounded-md hover:bg-gray-200"
+                                      onClick={() => setEditingAwarenessId(null)}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="md:flex md:items-center md:justify-between">
+                                  <div>
+                                    <p className="text-sm text-su-black/70">{entry.month}</p>
+                                    <h3 className="text-lg font-semibold text-su-blue">{entry.theme}</h3>
+                                    <p className="text-gray-700 mt-2">{entry.message}</p>
+                                    {entry.resource_url && (
+                                      <a
+                                        href={entry.resource_url}
+                                        className="inline-block mt-2 text-sm font-medium text-su-blue hover:underline"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        Learn More
+                                      </a>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2 mt-4 md:mt-0">
+                                    <button
+                                      className="bg-white text-su-blue border border-su-blue px-4 py-2 rounded-md hover:bg-blue-50"
+                                      onClick={() => setEditingAwarenessId(entry.id)}
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      className="bg-su-red text-white px-4 py-2 rounded-md hover:bg-red-600"
+                                      onClick={async () => {
+                                        if (!supabase) return;
+
+                                        const { error } = await supabase
+                                          .from('monthly_awareness')
+                                          .delete()
+                                          .eq('id', entry.id);
+
+                                        if (!error) {
+                                          setAwarenessEntries((prev) => prev.filter((a) => a.id !== entry.id));
+                                          setMessage('Awareness entry deleted successfully');
+                                        } else {
+                                          setMessage(error.message || 'Failed to delete awareness entry');
+                                        }
+                                      } }
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="md:flex md:items-center md:justify-between">
+                    )}
+
+                    {/* Footer Contact Tab */}
+                    {activeTab === 'footer' && (
                       <div>
-                        <p className="text-sm text-su-black/70">{entry.month}</p>
-                        <h3 className="text-lg font-semibold text-su-blue">{entry.theme}</h3>
-                        <p className="text-gray-700 mt-2">{entry.message}</p>
-                        {entry.resource_url && (
-                          <a
-                            href={entry.resource_url}
-                            className="inline-block mt-2 text-sm font-medium text-su-blue hover:underline"
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Learn More
-                          </a>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-6">Manage Footer Contact Information</h2>
+
+                        {/* footerContent state removed; nothing to render here */}
+                          <div className="space-y-6">
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                              <h3 className="text-lg font-semibold mb-4">Contact Email</h3>
+                              <input
+                                type="email"
+value={''}
+                                onChange={(e) => handleFooterUpdate('club_email', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                              <h3 className="text-lg font-semibold mb-4">Phone Number</h3>
+                              <input
+                                type="tel"
+                                value={''}
+                                onChange={(e) => handleFooterUpdate('med_centre_contact', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue" />
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                              <h3 className="text-lg font-semibold mb-4">Address</h3>
+                              <textarea
+                                value={''}
+                                onChange={(e) => handleFooterUpdate('med_centre_contact', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
+                                rows={3} />
+                            </div>
+
+                            <div className="bg-white rounded-lg shadow-md p-6">
+                              <h3 className="text-lg font-semibold mb-4">Office Hours</h3>
+                              <input
+                                type="text"
+                                value={''}
+                                onChange={(e) => handleFooterUpdate('emergency_numbers', e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
+                                placeholder="e.g., Monday - Friday: 9:00 AM - 5:00 PM" />
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <div className="flex gap-2 mt-4 md:mt-0">
-                        <button
-                          className="bg-white text-su-blue border border-su-blue px-4 py-2 rounded-md hover:bg-blue-50"
-                          onClick={() => setEditingAwarenessId(entry.id)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="bg-su-red text-white px-4 py-2 rounded-md hover:bg-red-600"
-                          onClick={async () => {
-                            if (!supabase) return;
-
-                            const { error } = await supabase
-                              .from('monthly_awareness')
-                              .delete()
-                              .eq('id', entry.id);
-
-                            if (!error) {
-                              setAwarenessEntries((prev) => prev.filter((a) => a.id !== entry.id));
-                              setMessage('Awareness entry deleted successfully');
-                            } else {
-                              setMessage(error.message || 'Failed to delete awareness entry');
-                            }
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Footer Contact Tab */}
-        {activeTab === 'footer' && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Manage Footer Contact Information</h2>
-            
-            {footerContent && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Contact Email</h3>
-                  <input
-                    type="email"
-                    value={(footerContent as any)?.email || ''}
-                    onChange={(e) => handleFooterUpdate('club_email', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Phone Number</h3>
-                  <input
-                    type="tel"
-                    value={(footerContent as any)?.phone || ''}
-                    onChange={(e) => handleFooterUpdate('med_centre_contact', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Address</h3>
-                  <textarea
-                    value={(footerContent as any)?.address || ''}
-                    onChange={(e) => handleFooterUpdate('med_centre_contact', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Office Hours</h3>
-                  <input
-                    type="text"
-                    value={(footerContent as any)?.office_hours || ''}
-                    onChange={(e) => handleFooterUpdate('emergency_numbers', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue"
-                    placeholder="e.g., Monday - Friday: 9:00 AM - 5:00 PM"
-                  />
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

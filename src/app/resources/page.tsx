@@ -72,6 +72,18 @@ const DEFAULT_RESOURCES: Resource[] = [
   },
 ];
 
+// Function to get appropriate icon based on resource category
+const getCategoryIcon = (category: string) => {
+  const lowerCategory = category.toLowerCase();
+  if (lowerCategory.includes('article') || lowerCategory.includes('blog')) {
+    return <DocumentIcon className="w-4 h-4 text-su-red" />;
+  } else if (lowerCategory.includes('guide') || lowerCategory.includes('help')) {
+    return <DocumentIcon className="w-4 h-4 text-su-red" />;
+  } else {
+    return <BookIcon className="w-4 h-4 text-su-red" />;
+  }
+};
+
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,18 +119,6 @@ export default function ResourcesPage() {
     }
   };
 
-  // Function to get appropriate icon based on resource category
-  const getCategoryIcon = (category: string) => {
-    const lowerCategory = category.toLowerCase();
-    if (lowerCategory.includes('article') || lowerCategory.includes('blog')) {
-      return <DocumentIcon className="w-4 h-4 text-su-red" />;
-    } else if (lowerCategory.includes('guide') || lowerCategory.includes('help')) {
-      return <DocumentIcon className="w-4 h-4 text-su-red" />;
-    } else {
-      return <BookIcon className="w-4 h-4 text-su-red" />;
-    }
-  };
-
   if (loading) {
     return (
       <div className="py-12 bg-gray-50">
@@ -133,16 +133,22 @@ export default function ResourcesPage() {
     );
   }
 
+  // Icon for title headings, using white icon for colored circles
+  const getTitleIcon = (category: string) => {
+    const c = category.toLowerCase();
+    if (c.includes('article') || c.includes('blog')) return <DocumentIcon className="w-5 h-5 text-white" />;
+    if (c.includes('guide') || c.includes('help')) return <DocumentIcon className="w-5 h-5 text-white" />;
+    return <BookIcon className="w-5 h-5 text-white" />;
+  };
+
   return (
     <div className="py-12 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Logo */}
         <div className="text-center mb-12">
           <div className="flex justify-center items-center mb-6">
-            <div className="w-16 h-16 bg-white rounded-full p-2 shadow-md mr-4">
-              <div className="w-full h-full bg-gradient-to-br from-su-blue to-su-red rounded-full flex items-center justify-center">
-                <BookIcon className="w-8 h-8 text-white" />
-              </div>
+            <div className="w-16 h-16 rounded-full bg-white shadow-md mr-4 flex items-center justify-center">
+              <BookIcon className="w-8 h-8 text-su-blue" />
             </div>
             <h1 className="text-4xl font-bold text-su-blue">Mental Health Resources</h1>
           </div>
@@ -163,7 +169,13 @@ export default function ResourcesPage() {
                   </div>
                   <span className="text-sm font-medium text-su-red">{resource.category}</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{resource.title}</h3>
+
+                <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
+                  <span className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center mr-2">
+                    {getTitleIcon(resource.category)}
+                  </span>
+                  {resource.title}
+                </h3>
                 <p className="text-gray-600 mb-6 leading-relaxed">{resource.description}</p>
                 {resource.url_or_storage_path ? (
                   <a

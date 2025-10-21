@@ -129,10 +129,8 @@ export default function EventsPage() {
         {/* Header with Logo */}
         <div className="text-center mb-12">
           <div className="flex justify-center items-center mb-6">
-            <div className="w-16 h-16 bg-white rounded-full p-2 shadow-md mr-4">
-              <div className="w-full h-full bg-gradient-to-br from-su-blue to-su-red rounded-full flex items-center justify-center">
-                <CalendarIcon className="w-8 h-8 text-white" />
-              </div>
+            <div className="w-16 h-16 rounded-full bg-white shadow-md mr-4 flex items-center justify-center">
+              <CalendarIcon className="w-8 h-8 text-su-blue" />
             </div>
             <h1 className="text-4xl font-bold text-su-blue">Events</h1>
           </div>
@@ -189,7 +187,12 @@ export default function EventsPage() {
                       {new Date(event.start).toLocaleDateString()}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{event.title}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3 flex items-center">
+                    <span className="w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center mr-2">
+                      <CalendarIcon className="w-5 h-5 text-white" />
+                    </span>
+                    {event.title}
+                  </h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">{event.description}</p>
                   <div className="flex items-center text-gray-500 text-sm mb-6">
                     <LocationIcon className="w-4 h-4 mr-2" />
