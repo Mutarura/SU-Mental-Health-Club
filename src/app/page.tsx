@@ -9,7 +9,9 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <Hero />
       <QuoteCarousel />
-      <MonthlyAwareness />
+      <div className="bg-white">
+        <MonthlyAwareness />
+      </div>
       <MissionSection />
       <EventsPreview />
     </div>

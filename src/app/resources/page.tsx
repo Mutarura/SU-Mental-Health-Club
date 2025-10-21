@@ -77,8 +77,6 @@ const getCategoryIcon = (category: string) => {
   const lowerCategory = category.toLowerCase();
   if (lowerCategory.includes('article') || lowerCategory.includes('blog')) {
     return <DocumentIcon className="w-4 h-4 text-white" />;
-  } else if (lowerCategory.includes('podcast')) {
-    return <DocumentIcon className="w-4 h-4 text-white" />;
   } else if (lowerCategory.includes('guide') || lowerCategory.includes('help')) {
     return <DocumentIcon className="w-4 h-4 text-white" />;
   } else {
@@ -135,12 +133,11 @@ export default function ResourcesPage() {
     );
   }
 
-  // Icon for title headings, using white icon for colored circles
   const getTitleIcon = (category: string) => {
     const c = category.toLowerCase();
-    if (c.includes('article') || c.includes('blog')) return <DocumentIcon className="w-5 h-5 text-white" />;
-    if (c.includes('guide') || c.includes('help')) return <DocumentIcon className="w-5 h-5 text-white" />;
-    return <BookIcon className="w-5 h-5 text-white" />;
+    if (c.includes('article') || c.includes('blog')) return <DocumentIcon className="w-5 h-5 text-su-blue mr-2" />;
+    if (c.includes('guide') || c.includes('help')) return <DocumentIcon className="w-5 h-5 text-su-blue mr-2" />;
+    return <BookIcon className="w-5 h-5 text-su-blue mr-2" />;
   };
 
   return (
@@ -149,10 +146,14 @@ export default function ResourcesPage() {
         {/* Header with Logo */}
         <div className="text-center mb-12">
           <div className="flex justify-center items-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-white shadow-md mr-4 flex items-center justify-center">
-              <BookIcon className="w-8 h-8 text-su-blue" />
+            <div className="w-16 h-16 bg-white rounded-full p-2 shadow-md mr-4">
+              <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
+                <BookIcon className="w-8 h-8 text-su-blue" />
+              </div>
             </div>
-            <h1 className="text-4xl font-bold text-su-blue">Mental Health Resources</h1>
+            <h1 className="text-4xl font-bold text-su-blue flex items-center justify-center">
+              Mental Health Resources
+            </h1>
           </div>
           <div className="w-24 h-1 bg-su-red mx-auto mb-6"></div>
           <p className="text-gray-600 max-w-2xl mx-auto">
@@ -169,10 +170,9 @@ export default function ResourcesPage() {
                   <div className="w-10 h-10 bg-su-blue rounded-full flex items-center justify-center mr-3">
                     {getCategoryIcon(resource.category)}
                   </div>
-                  <span className="text-sm font-medium text-su-blue">{resource.category}</span>
+                  <span className="text-sm font-medium text-su-red">{resource.category}</span>
                 </div>
-
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
                   {resource.title}
                 </h3>
                 <p className="text-gray-600 mb-6 leading-relaxed">{resource.description}</p>
@@ -181,7 +181,7 @@ export default function ResourcesPage() {
                     href={resource.url_or_storage_path}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full bg-su-blue text-white py-3 px-6 rounded-md hover:bg-blue-700 transition-colors font-medium inline-block text-center"
+                    className="w-full bg-su-red text-white py-3 px-6 rounded-md hover:bg-red-700 transition-colors font-medium inline-block text-center"
                   >
                     Read Article
                   </a>
