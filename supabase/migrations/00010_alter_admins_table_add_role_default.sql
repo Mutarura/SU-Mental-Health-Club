@@ -1,0 +1,1 @@
+ALTER TABLE admins ALTER COLUMN role SET DEFAULT 'user';
