@@ -90,6 +90,15 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     fetchResources();
+
+    if (supabase) {
+      const channel = supabase.channel('resources-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, fetchResources)
+        .subscribe();
+      return () => {
+        channel.unsubscribe();
+      };
+    }
   }, []);
 
   const fetchResources = async () => {

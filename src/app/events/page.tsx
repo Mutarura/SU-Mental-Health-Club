@@ -114,6 +114,11 @@ export default function EventsPage() {
 
   const now = new Date();
 
+  const upcomingEvents = events.filter(event => new Date(event.start) >= now);
+  const pastEvents = events.filter(event => new Date(event.start) < now);
+
+  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' or 'past'
+
   if (loading) {
     return (
       <div className="py-12 bg-gray-50">
@@ -132,77 +137,148 @@ export default function EventsPage() {
     <div className="py-12 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Logo */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center items-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-white shadow-md mr-4 flex items-center justify-center">
-              <CalendarIcon className="w-8 h-8 text-su-blue" />
+        <div className="w-full max-w-6xl mx-auto mt-12 p-6 bg-white shadow-lg rounded-lg">
+          <div className="text-center mb-12">
+            <div className="flex justify-center items-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-white shadow-md mr-4 flex items-center justify-center">
+                <CalendarIcon className="w-8 h-8 text-su-blue" />
+              </div>
+              <h1 className="text-4xl font-bold text-su-blue">Events</h1>
             </div>
-            <h1 className="text-4xl font-bold text-su-blue">Events</h1>
+            <div className="w-24 h-1 bg-su-red mx-auto mb-6"></div>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Join us for workshops, support groups, and awareness events designed to promote mental health and well-being.
+            </p>
           </div>
-          <div className="w-24 h-1 bg-su-red mx-auto mb-6"></div>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Join us for workshops, support groups, and awareness events designed to promote mental health and well-being.
-          </p>
-        </div>
 
-        {events.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No events scheduled at this time. Check back soon!</p>
+          <div className="flex justify-center mb-8 space-x-4">
+            <button
+              onClick={() => setActiveTab('upcoming')}
+              className={`px-6 py-3 text-lg font-medium transition-colors duration-300 ${activeTab === 'upcoming' ? 'text-su-blue border-b-4 border-su-blue' : 'text-gray-700 hover:text-su-blue'}`}
+            >
+              Upcoming Events
+            </button>
+            <button
+              onClick={() => setActiveTab('past')}
+              className={`px-6 py-3 text-lg font-medium transition-colors duration-300 ${activeTab === 'past' ? 'text-su-blue border-b-4 border-su-blue' : 'text-gray-700 hover:text-su-blue'}`}
+            >
+              Past Events
+            </button>
           </div>
-        ) : (
-          <div className="space-y-8">
-            {events.map((event) => (
-              <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col md:flex-row">
-                <div className="md:w-1/3 h-64 bg-white rounded-lg flex items-center justify-center">
-                  {event.image_url && !imageErrors[event.id] ? (
-                    <img
-                      src={event.image_url}
-                      alt={event.title}
-                      className="w-full h-full object-cover rounded-lg"
-                      onError={() => handleImageError(event.id)}
-                    />
-                  ) : (
-                    <div className="text-center">
-                      <div className="w-32 h-32 bg-su-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        {/* Calendar icon for all events */}
-                        <CalendarIcon className="w-16 h-16 text-white" />
+
+          {/* Conditional Rendering of Events based on activeTab */}
+          <div className="mt-8">
+            {activeTab === 'upcoming' && upcomingEvents.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">No upcoming events at this time. Check back soon!</p>
+              </div>
+            )}
+            {activeTab === 'past' && pastEvents.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">No past events found.</p>
+              </div>
+            )}
+
+            {activeTab === 'upcoming' && upcomingEvents.length > 0 && (
+              <div className="space-y-12">
+                <h2 className="text-3xl font-bold text-su-blue mb-6 text-center">Upcoming Events</h2>
+                <div className="space-y-8">
+                  {upcomingEvents.map((event) => (
+                    <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col md:flex-row">
+                      <div className="md:w-1/3 h-64 bg-white rounded-lg flex items-center justify-center">
+                        {event.image_url && !imageErrors[event.id] ? (
+                          <img
+                            src={event.image_url}
+                            alt={event.title}
+                            className="w-full h-full object-cover rounded-lg"
+                            onError={() => handleImageError(event.id)}
+                          />
+                        ) : (
+                          <div className="text-center">
+                            <div className="w-32 h-32 bg-su-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                              <CalendarIcon className="w-16 h-16 text-white" />
+                            </div>
+                            <p className="text-gray-500 text-sm mt-4">Event</p>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-gray-500 text-sm mt-4">Event</p>
+                      <div className="md:w-2/3 p-8">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            Upcoming
+                          </span>
+                          <div className="flex items-center text-gray-500 text-sm">
+                            <CalendarIcon className="w-4 h-4 mr-1" />
+                            {new Date(event.start).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3 flex items-center">
+                          {event.title}
+                        </h3>
+                        <p className="text-gray-600 mb-4 leading-relaxed">{event.description}</p>
+                        <div className="flex items-center text-gray-500 text-sm mb-6">
+                          <LocationIcon className="w-4 h-4 mr-2" />
+                          {event.location}
+                        </div>
+                        <button className="bg-su-blue text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors font-medium">
+                          Register for Event
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="md:w-2/3 p-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                      new Date(event.start) >= now
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {new Date(event.start) >= now ? 'Upcoming' : 'Past Event'}
-                    </span>
-                    <div className="flex items-center text-gray-500 text-sm">
-                      <CalendarIcon className="w-4 h-4 mr-1" />
-                      {new Date(event.start).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3 flex items-center">
-                    {event.title}
-                  </h3>
-                  <p className="text-gray-600 mb-4 leading-relaxed">{event.description}</p>
-                  <div className="flex items-center text-gray-500 text-sm mb-6">
-                    <LocationIcon className="w-4 h-4 mr-2" />
-                    {event.location}
-                  </div>
-                  {new Date(event.start) >= now && (
-                    <button className="bg-su-blue text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors font-medium">
-                      Register for Event
-                    </button>
-                  )}
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
+
+            {activeTab === 'past' && pastEvents.length > 0 && (
+              <div className="space-y-12">
+                <h2 className="text-3xl font-bold text-su-blue mb-6 text-center">Past Events</h2>
+                <div className="space-y-8">
+                  {pastEvents.map((event) => (
+                    <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col md:flex-row opacity-70">
+                      <div className="md:w-1/3 h-64 bg-white rounded-lg flex items-center justify-center">
+                        {event.image_url && !imageErrors[event.id] ? (
+                          <img
+                            src={event.image_url}
+                            alt={event.title}
+                            className="w-full h-full object-cover rounded-lg"
+                            onError={() => handleImageError(event.id)}
+                          />
+                        ) : (
+                          <div className="text-center">
+                            <div className="w-32 h-32 bg-su-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                              <CalendarIcon className="w-16 h-16 text-white" />
+                            </div>
+                            <p className="text-gray-500 text-sm mt-4">Event</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="md:w-2/3 p-8">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                            Past Event
+                          </span>
+                          <div className="flex items-center text-gray-500 text-sm">
+                            <CalendarIcon className="w-4 h-4 mr-1" />
+                            {new Date(event.start).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3 flex items-center">
+                          {event.title}
+                        </h3>
+                        <p className="text-gray-600 mb-4 leading-relaxed">{event.description}</p>
+                        <div className="flex items-center text-gray-500 text-sm mb-6">
+                          <LocationIcon className="w-4 h-4 mr-2" />
+                          {event.location}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

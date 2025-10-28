@@ -266,14 +266,14 @@ export default function AboutPage() {
       {/* Hero */}
       <header className="max-w-6xl mx-auto px-4 pt-16 pb-10 text-center">
         <div className="flex items-center justify-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center">
-            {/* Replace logo with icon */}
-            <BalanceIcon className="w-8 h-8 text-yellow-500" />
+            <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center">
+              <BalanceIcon className="w-8 h-8 text-su-gold" />
+            </div>
+            <h1 className="text-3xl font-bold text-su-blue">
+              Strahmore Mental Health Club
+            </h1>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-            Strathmore Mental Health Club
-          </h1>
-        </div>
+          <div className="w-24 h-1 bg-su-red mx-auto mb-8"></div>
         <p className="mt-4 text-gray-600 text-lg max-w-3xl mx-auto">
           We’re a student-led community focused on awareness, support, and resilience. Our mission is to foster open
           conversation, reduce stigma, and connect peers with resources.
