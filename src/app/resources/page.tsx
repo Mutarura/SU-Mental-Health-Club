@@ -87,6 +87,7 @@ const getCategoryIcon = (category: string) => {
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'articles' | 'podcasts' | 'tools'>('articles');
 
   useEffect(() => {
     fetchResources();
@@ -149,6 +150,18 @@ export default function ResourcesPage() {
     return <BookIcon className="w-5 h-5 text-su-blue mr-2" />;
   };
 
+  // Tab data
+  const articlesAndGuides = resources.filter((r) => {
+    const c = (r.category || '').toLowerCase();
+    return c.includes('article') || c.includes('guide');
+  });
+  const podcasts = resources.filter((r) => (r.category || '').toLowerCase() === 'podcast');
+  const tools = resources.filter((r) => {
+    const c = (r.category || '').toLowerCase();
+    return !(c.includes('article') || c.includes('guide') || c === 'podcast');
+  });
+  const list = activeTab === 'articles' ? articlesAndGuides : activeTab === 'podcasts' ? podcasts : tools;
+
   return (
     <div className="py-12 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -170,38 +183,101 @@ export default function ResourcesPage() {
           </p>
         </div>
 
+        {/* Professional Tabs */}
+        <div className="mt-4">
+          <nav className="relative flex items-center gap-10 border-b border-gray-200">
+            <button
+              role="tab"
+              aria-selected={activeTab === 'articles'}
+              onClick={() => setActiveTab('articles')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('articles'); }}
+              className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'articles' ? 'text-su-blue' : 'text-gray-800 hover:text-su-blue'}`}
+            >
+              <span className="inline-flex items-center gap-2">
+                Articles & Guides
+                <span className={`${activeTab === 'articles' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'} inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5`}>{articlesAndGuides.length}</span>
+              </span>
+              {activeTab === 'articles' && (
+                <span className="absolute left-0 right-0 -bottom-[1px] h-[3px] bg-su-blue rounded-t"></span>
+              )}
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'podcasts'}
+              onClick={() => setActiveTab('podcasts')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('podcasts'); }}
+              className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'podcasts' ? 'text-su-blue' : 'text-gray-800 hover:text-su-blue'}`}
+            >
+              <span className="inline-flex items-center gap-2">
+                Podcasts
+                <span className={`${activeTab === 'podcasts' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'} inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5`}>{podcasts.length}</span>
+              </span>
+              {activeTab === 'podcasts' && (
+                <span className="absolute left-0 right-0 -bottom-[1px] h-[3px] bg-su-blue rounded-t"></span>
+              )}
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'tools'}
+              onClick={() => setActiveTab('tools')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('tools'); }}
+              className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'tools' ? 'text-su-blue' : 'text-gray-800 hover:text-su-blue'}`}
+            >
+              <span className="inline-flex items-center gap-2">
+                Wellness Tools
+                <span className={`${activeTab === 'tools' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'} inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5`}>{tools.length}</span>
+              </span>
+              {activeTab === 'tools' && (
+                <span className="absolute left-0 right-0 -bottom-[1px] h-[3px] bg-su-blue rounded-t"></span>
+              )}
+            </button>
+          </nav>
+        </div>
+
         {/* Resources Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {resources.map((resource) => (
-            <div key={resource.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-su-blue rounded-full flex items-center justify-center mr-3">
-                    {getCategoryIcon(resource.category)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
+          {list.map((resource) => {
+            const cat = (resource.category || '').toLowerCase();
+            const isArticle = cat.includes('article') || cat.includes('guide');
+            const isPodcast = cat === 'podcast';
+            const barBg = isArticle ? 'bg-green-100' : isPodcast ? 'bg-blue-100' : 'bg-yellow-100';
+            const barText = isArticle ? 'text-green-700' : isPodcast ? 'text-su-blue' : 'text-yellow-700';
+            const label = isArticle ? 'Article' : isPodcast ? 'Podcast' : 'Tool';
+            const ctaLabel = isArticle ? 'Read Article' : isPodcast ? 'Listen' : 'Open Tool';
+            return (
+              <div key={resource.id} className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+                <div className="p-6">
+                  {/* Icon pill */}
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mr-3">
+                      {getCategoryIcon(resource.category)}
+                    </div>
                   </div>
-                  <span className="text-sm font-medium text-su-red">{resource.category}</span>
+                  {/* Category bar */}
+                  <div className={`relative w-full h-5 ${barBg} rounded-full mb-4`}>
+                    <span className={`absolute inset-y-0 left-3 flex items-center text-xs font-semibold ${barText}`}>{label}</span>
+                  </div>
+                  {/* Title and description */}
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{resource.title}</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed">{resource.description}</p>
+                  {resource.url_or_storage_path ? (
+                    <a
+                      href={resource.url_or_storage_path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center bg-su-red text-white px-6 py-3 rounded-md font-medium hover:bg-red-700 transition-colors"
+                    >
+                      {ctaLabel}
+                    </a>
+                  ) : (
+                    <button disabled className="inline-flex items-center justify-center bg-gray-400 text-white px-6 py-3 rounded-md font-medium cursor-not-allowed">
+                      Coming Soon
+                    </button>
+                  )}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center">
-                  {resource.title}
-                </h3>
-                <p className="text-gray-600 mb-6 leading-relaxed">{resource.description}</p>
-                {resource.url_or_storage_path ? (
-                  <a
-                    href={resource.url_or_storage_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full bg-su-red text-white py-3 px-6 rounded-md hover:bg-red-700 transition-colors font-medium inline-block text-center"
-                  >
-                    Read Article
-                  </a>
-                ) : (
-                  <button disabled className="w-full bg-gray-400 text-white py-3 px-6 rounded-md cursor-not-allowed font-medium">
-                    Coming Soon
-                  </button>
-                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

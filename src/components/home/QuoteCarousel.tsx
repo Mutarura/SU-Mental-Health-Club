@@ -35,6 +35,16 @@ export default function QuoteCarousel() {
     }
 
     fetchQuotes();
+
+    if (supabase) {
+      const channel = supabase
+        .channel('quotes-realtime-home')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'quotes' }, fetchQuotes)
+        .subscribe();
+      return () => {
+        channel.unsubscribe();
+      };
+    }
   }, []);
 
   useEffect(() => {

@@ -151,19 +151,40 @@ export default function EventsPage() {
             </p>
           </div>
 
-          <div className="flex justify-center mb-8 space-x-4">
-            <button
-              onClick={() => setActiveTab('upcoming')}
-              className={`px-6 py-3 text-lg font-medium transition-colors duration-300 ${activeTab === 'upcoming' ? 'text-su-blue border-b-4 border-su-blue' : 'text-gray-700 hover:text-su-blue'}`}
-            >
-              Upcoming Events
-            </button>
-            <button
-              onClick={() => setActiveTab('past')}
-              className={`px-6 py-3 text-lg font-medium transition-colors duration-300 ${activeTab === 'past' ? 'text-su-blue border-b-4 border-su-blue' : 'text-gray-700 hover:text-su-blue'}`}
-            >
-              Past Events
-            </button>
+          {/* Professional Tabs */}
+          <div className="max-w-4xl mx-auto">
+            <nav className="relative flex items-center gap-8 border-b border-gray-200">
+              <button
+                role="tab"
+                aria-selected={activeTab === 'upcoming'}
+                onClick={() => setActiveTab('upcoming')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('upcoming'); }}
+                className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'upcoming' ? 'text-su-blue' : 'text-gray-700 hover:text-su-blue'}`}
+              >
+                <span className="inline-flex items-center gap-2">
+                  Upcoming Events
+                  <span className={`inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5 ${activeTab === 'upcoming' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'}`}>{upcomingEvents.length}</span>
+                </span>
+                {activeTab === 'upcoming' && (
+                  <span className="absolute left-0 right-0 -bottom-[1px] h-[3px] bg-su-blue rounded-t"></span>
+                )}
+              </button>
+              <button
+                role="tab"
+                aria-selected={activeTab === 'past'}
+                onClick={() => setActiveTab('past')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveTab('past'); }}
+                className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'past' ? 'text-su-blue' : 'text-gray-700 hover:text-su-blue'}`}
+              >
+                <span className="inline-flex items-center gap-2">
+                  Past Events
+                  <span className={`inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5 ${activeTab === 'past' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'}`}>{pastEvents.length}</span>
+                </span>
+                {activeTab === 'past' && (
+                  <span className="absolute left-0 right-0 -bottom-[1px] h-[3px] bg-su-blue rounded-t"></span>
+                )}
+              </button>
+            </nav>
           </div>
 
           {/* Conditional Rendering of Events based on activeTab */}

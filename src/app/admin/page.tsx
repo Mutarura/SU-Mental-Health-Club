@@ -194,7 +194,7 @@ export default function AdminPage() {
 
   const [resourceForm, setResourceForm] = useState({
     title: '',
-    category: 'article' as 'article' | 'video' | 'pdf' | 'tool' | 'book',
+    category: 'article' as 'article' | 'guide' | 'podcast',
     url_or_storage_path: '',
     tags: [] as string[],
     description: '',
@@ -297,11 +297,11 @@ export default function AdminPage() {
     try {
       const { error } = editingItem
         ? await supabase!
-            .from('council_members')
+            .from('council_leaders')
             .update({ ...councilLeaderForm, photo_url: photoUrl })
             .eq('id', editingItem.id)
         : await supabase!
-            .from('council_members')
+            .from('council_leaders')
             .insert([{ ...councilLeaderForm, photo_url: photoUrl }]);
 
       if (error) throw error;
@@ -867,7 +867,7 @@ setShowCouncilLeaderForm(false);
         setResourceForm({
           title: resourceItem.title || '',
           description: resourceItem.description || '',
-          category: (resourceItem.category as 'article' | 'video' | 'pdf' | 'tool' | 'book') || 'article',
+          category: (resourceItem.category as 'article' | 'guide' | 'podcast') || 'article',
           url_or_storage_path: resourceItem.url_or_storage_path || '',
           tags: resourceItem.tags || [],
           image_url: resourceItem.image_url || ''
@@ -986,7 +986,7 @@ setShowCouncilLeaderForm(false);
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
                   required
                 />
-              </div>
+            </div>
             )}
 
             {message && (
@@ -1040,22 +1040,6 @@ setShowCouncilLeaderForm(false);
   return (
     <div className="min-h-screen bg-gray-100">
 
-
-      {/* Header */}
-      <div className="bg-su-blue shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <h1 className="text-white text-xl font-bold">Admin Dashboard</h1>
-            <button
-              onClick={handleSignOut}
-              className="bg-white text-su-blue px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
 
         {message && (
@@ -1064,823 +1048,854 @@ setShowCouncilLeaderForm(false);
           </div>
         )}
 
-        {/* Navigation Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8 overflow-x-auto">
-            {[
-              { id: 'dashboard', label: 'Dashboard', icon: <HomeIcon className="w-5 h-5 mr-2" /> },
-              { id: 'quotes', label: 'Quotes', icon: <ChatIcon className="w-5 h-5 mr-2" /> },
-              { id: 'events', label: 'Events', icon: <CalendarIcon className="w-5 h-5 mr-2" /> },
-              { id: 'resources', label: 'Resources', icon: <BookIcon className="w-5 h-5 mr-2" /> },
-              { id: 'councilleaders', label: 'Council Leaders', icon: <PeopleIcon className="w-5 h-5 mr-2" /> },
-              { id: 'awareness', label: 'Monthly Awareness', icon: <SunIcon className="w-5 h-5 mr-2" /> },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                className={`flex items-center ${activeTab === tab.id
-                  ? 'border-blue-600 text-black bg-blue-50'
-                  : 'border-transparent text-black hover:text-black hover:border-gray-400 hover:bg-gray-50'} whitespace-nowrap py-4 px-3 border-b-2 font-medium text-sm transition-colors`}
-                onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        {activeTab === 'dashboard' && (
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-blue-100 text-su-blue">
-                    <ChatIcon className="w-6 h-6" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Quotes</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalQuotes}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-purple-100 text-purple-600">
-                    <PeopleIcon className="w-6 h-6" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Council Leaders</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalCouncilLeaders}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-blue-100 text-su-blue">
-                    <CalendarIcon className="w-6 h-6" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Events</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalEvents}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center">
-                  <div className="p-3 rounded-full bg-green-100 text-green-600">
-                    <BookIcon className="w-6 h-6" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Resources</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalResources}</p>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        {/* Quotes Tab */}
-        {activeTab === 'quotes' && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Manage Quotes</h2>
-              <button
-                onClick={() => {
-                  setShowQuoteForm(true);
-                  setEditingItem(null);
-                  setQuoteForm({ text: '', author: '' });
-                } }
-                className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Add New Quote
-              </button>
-            </div>
-
-            {showQuoteForm && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  {editingItem ? 'Edit Quote' : 'Add New Quote'}
-                </h3>
-                <form onSubmit={handleQuoteSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quote Text</label>
-                    <textarea
-                      value={quoteForm.text}
-                      onChange={(e) => setQuoteForm({ ...quoteForm, text: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      rows={3}
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
-                    <input
-                      type="text"
-                      value={quoteForm.author}
-                      onChange={(e) => setQuoteForm({ ...quoteForm, author: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      type="submit"
-                      className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    >
-                      {editingItem ? 'Update Quote' : 'Add Quote'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowQuoteForm(false);
-                        setEditingItem(null);
-                      } }
-                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-            </div>
-          )}
-
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quote</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {quotes.map((quote) => (
-                    <tr key={quote.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{quote.text}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{quote.author}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => editItem(quote, 'quote')}
-                          className="text-su-blue hover:text-blue-700 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteQuote(quote.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Events Tab */}
-        {activeTab === 'events' && (
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Manage Events</h2>
-              <button
-                onClick={() => {
-                  setShowEventForm(true);
-                  setEditingItem(null);
-                  setEventForm({ title: '', slug: '', description: '', start: '', end: '', location: '', calendar_link: '', image_url: '' });
-                }}
-                className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Add New Event
-              </button>
-            </div>
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <aside className="w-64 bg-white border border-gray-200 rounded-xl h-fit p-4">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">SMHC Admin</h2>
+              {user && (
+                <p className="mt-1 text-sm text-gray-600">{user.email}</p>
               )}
-              {showEventForm && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4">
-                {editingItem ? 'Edit Event' : 'Add New Event'}
-              </h3>
-              <form onSubmit={handleEventSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                  <input
-                    type="text"
-                    value={eventForm.title}
-                    onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                    required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    value={eventForm.description}
-                    onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                    rows={3}
-                    required />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input
-                      type="datetime-local"
-                      value={eventForm.start}
-                      onChange={(e) => setEventForm({ ...eventForm, start: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                    <input
-                      type="datetime-local"
-                      value={eventForm.end}
-                      onChange={(e) => setEventForm({ ...eventForm, end: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input
-                    type="text"
-                    value={eventForm.location}
-                    onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                    required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Image</label>
-                  <input
-                    type="file"
-                    onChange={(e) => setEventImageFile(e.target.files ? e.target.files[0] : null)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                    accept="image/*" />
-                  {eventImageFile && (
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">Selected file: {eventImageFile.name}</p>
-                      <img src={URL.createObjectURL(eventImageFile)} alt="Event Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
+            </div>
+            <nav className="space-y-2">
+              <button
+                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'dashboard' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                <HomeIcon className="w-5 h-5 mr-2" /> Dashboard Overview
+              </button>
+              <button
+                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'events' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
+                onClick={() => setActiveTab('events')}
+              >
+                <CalendarIcon className="w-5 h-5 mr-2" /> Manage Events
+              </button>
+              <button
+                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'resources' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
+                onClick={() => setActiveTab('resources')}
+              >
+                <BookIcon className="w-5 h-5 mr-2" /> Manage Resources
+              </button>
+              <button
+                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'councilleaders' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
+                onClick={() => setActiveTab('councilleaders')}
+              >
+                <PeopleIcon className="w-5 h-5 mr-2" /> Manage Team
+              </button>
+              <button
+                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'awareness' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
+                onClick={() => setActiveTab('awareness')}
+              >
+                <SunIcon className="w-5 h-5 mr-2" /> Monthly Awareness
+              </button>
+              <div className="pt-4 border-t border-gray-200 mt-4">
+                <button
+                  onClick={handleSignOut}
+                  className="w-full bg-su-blue text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-700"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </nav>
+          </aside>
+
+          {/* Main content */}
+          <div className="flex-1">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600 text-sm">View your dashboard summary</p>
+            </div>
+
+            {activeTab === 'dashboard' && (
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-blue-100 text-su-blue">
+                        <ChatIcon className="w-6 h-6" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Total Quotes</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalQuotes}</p>
+                      </div>
                     </div>
-                  )}
-                  {eventForm.image_url && !eventImageFile && (
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">Current image:</p>
-                      <img src={eventForm.image_url} alt="Current Event Image" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+                        <PeopleIcon className="w-6 h-6" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Council Leaders</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalCouncilLeaders}</p>
+                      </div>
                     </div>
-                  )}
-                  {uploadingEventImage && <p className="text-su-blue text-sm mt-2">Uploading image...</p>}
-                  {uploadEventImageError && <p className="text-red-500 text-sm mt-2">{uploadEventImageError}</p>}
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-blue-100 text-su-blue">
+                        <CalendarIcon className="w-6 h-6" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Total Events</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalEvents}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-green-100 text-green-600">
+                        <BookIcon className="w-6 h-6" />
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Total Resources</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalResources}</p>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
-                <div className="flex space-x-2">
+              </div>
+            )}
+
+            {activeTab === 'quotes' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Manage Quotes</h2>
                   <button
-                    type="submit"
+                    onClick={() => {
+                      setShowQuoteForm(true);
+                      setEditingItem(null);
+                      setQuoteForm({ text: '', author: '' });
+                    } }
                     className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                   >
-                    {editingItem ? 'Update Event' : 'Add Event'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEventForm(false);
-                      setEditingItem(null);
-                      setEventImageFile(null); // Clear file on form close
-                      setEventImagePreview(null); // Clear preview on form close
-                      setUploadingEventImage(false);
-                      setUploadEventImageError(null);
-                    } }
-                    className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
-                  >
-                    Cancel
+                    Add New Quote
                   </button>
                 </div>
-              </form>
-            </div>
-            )}
 
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {events.map((event) => (
-                    <tr key={event.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{event.title}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(event as any).date ? new Date((event as any).date).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{event.location}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                {showQuoteForm && (
+                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h3 className="text-lg font-semibold mb-4">
+                      {editingItem ? 'Edit Quote' : 'Add New Quote'}
+                    </h3>
+                    <form onSubmit={handleQuoteSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Quote Text</label>
+                        <textarea
+                          value={quoteForm.text}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, text: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          rows={3}
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
+                        <input
+                          type="text"
+                          value={quoteForm.author}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, author: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div className="flex space-x-2">
                         <button
-                          onClick={() => editItem(event as Event, 'event')}
-                          className="text-su-blue hover:text-blue-700 mr-4"
+                          type="submit"
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                         >
-                          Edit
+                          {editingItem ? 'Update Quote' : 'Add Quote'}
                         </button>
                         <button
-                          onClick={() => deleteEvent(event.id)}
-                          className="text-red-600 hover:text-red-900"
+                          type="button"
+                          onClick={() => {
+                            setShowQuoteForm(false);
+                            setEditingItem(null);
+                          } }
+                          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                         >
-                          Delete
+                          Cancel
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            </div>
-        )&rbrace;
-
-
-        {activeTab === 'resources' && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Manage Resources</h2>
-              <button
-                onClick={() => {
-                  setShowResourceForm(true);
-                  setEditingItem(null);
-                  setResourceForm({ title: '', category: 'article', url_or_storage_path: '', tags: [], description: '', image_url: '' });
-                } }
-                className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Add New Resource
-              </button>
-            </div>
-
-            {showResourceForm && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  {editingItem ? 'Edit Resource' : 'Add New Resource'}
-                </h3>
-                <form onSubmit={handleResourceSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                    <input
-                      type="text"
-                      value={resourceForm.title}
-                      onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                    <select
-                      value={resourceForm.category}
-                      onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value as any })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required
-                    >
-                      <option value="">Select Category</option>
-                      <option value="Self-Care">Self-Care</option>
-                      <option value="Stress Management">Stress Management</option>
-                      <option value="Academic Support">Academic Support</option>
-                      <option value="Crisis Resources">Crisis Resources</option>
-                      <option value="Wellness">Wellness</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      value={resourceForm.description}
-                      onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      rows={3}
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Resource Image (optional)</label>
-                    <input
-                      type="file"
-                      onChange={(e) => setResourceImageFile(e.target.files ? e.target.files[0] : null)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      accept="image/*"
-                    />
-                    {resourceImageFile && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">Selected file: {resourceImageFile.name}</p>
-                        <img src={URL.createObjectURL(resourceImageFile)} alt="Resource Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
                       </div>
-                    )}
-                    {resourceForm.image_url && !resourceImageFile && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">Current image:</p>
-                        <img src={resourceForm.image_url} alt="Current Resource Image" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                      </div>
-                    )}
-                    {uploadingResourceImage && <p className="text-su-blue text-sm mt-2">Uploading image...</p>}
-                    {uploadResourceImageError && <p className="text-red-500 text-sm mt-2">{uploadResourceImageError}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-black mb-1">URL or Storage Path</label>
-                    <input
-                      type="text"
-                      value={resourceForm.url_or_storage_path}
-                      onChange={(e) => setResourceForm({ ...resourceForm, url_or_storage_path: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://example.com/article OR /files/guide.pdf"
-                      required />
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      type="submit"
-                      className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    >
-                      {editingItem ? 'Update Resource' : 'Add Resource'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowResourceForm(false);
-                        setEditingItem(null);
-                      } }
-                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
+                    </form>
+                </div>
+              )}
+
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quote</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {quotes.map((quote) => (
+                        <tr key={quote.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{quote.text}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{quote.author}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => editItem(quote, 'quote')}
+                              className="text-su-blue hover:text-blue-700 mr-4"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteQuote(quote.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {resources.map((resource) => (
-                    <tr key={resource.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{resource.title}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{resource.category}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => editItem(resource, 'resource')}
-                          className="text-su-blue hover:text-blue-700 mr-4"
+            {activeTab === 'events' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Manage Events</h2>
+                  <button
+                    onClick={() => {
+                      setShowEventForm(true);
+                      setEditingItem(null);
+                      setEventForm({ title: '', slug: '', description: '', start: '', end: '', location: '', calendar_link: '', image_url: '' });
+                    }}
+                    className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    Add New Event
+                  </button>
+                </div>
+                  {showEventForm && (
+                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                  <h3 className="text-lg font-semibold mb-4">
+                    {editingItem ? 'Edit Event' : 'Add New Event'}
+                  </h3>
+                  <form onSubmit={handleEventSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={eventForm.title}
+                        onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                        required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea
+                        value={eventForm.description}
+                        onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                        rows={3}
+                        required />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input
+                          type="datetime-local"
+                          value={eventForm.start}
+                          onChange={(e) => setEventForm({ ...eventForm, start: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <input
+                          type="datetime-local"
+                          value={eventForm.end}
+                          onChange={(e) => setEventForm({ ...eventForm, end: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                      <input
+                        type="text"
+                        value={eventForm.location}
+                        onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                        required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Event Image</label>
+                      <input
+                        type="file"
+                        onChange={(e) => setEventImageFile(e.target.files ? e.target.files[0] : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                        accept="image/*" />
+                      {eventImageFile && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500">Selected file: {eventImageFile.name}</p>
+                          <img src={URL.createObjectURL(eventImageFile)} alt="Event Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                        </div>
+                      )}
+                      {eventForm.image_url && !eventImageFile && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500">Current image:</p>
+                          <img src={eventForm.image_url} alt="Current Event Image" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                        </div>
+                      )}
+                      {uploadingEventImage && <p className="text-su-blue text-sm mt-2">Uploading image...</p>}
+                      {uploadEventImageError && <p className="text-red-500 text-sm mt-2">{uploadEventImageError}</p>}
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        type="submit"
+                        className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                      >
+                        {editingItem ? 'Update Event' : 'Add Event'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowEventForm(false);
+                          setEditingItem(null);
+                          setEventImageFile(null); // Clear file on form close
+                          setEventImagePreview(null); // Clear preview on form close
+                          setUploadingEventImage(false);
+                          setUploadEventImageError(null);
+                        } }
+                        className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                )}
+
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {events.map((event) => (
+                        <tr key={event.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{event.title}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+            {(event as any).start ? new Date((event as any).start).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{event.location}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => editItem(event as Event, 'event')}
+                              className="text-su-blue hover:text-blue-700 mr-4"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteEvent(event.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+
+            {activeTab === 'resources' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Manage Resources</h2>
+                  <button
+                    onClick={() => {
+                      setShowResourceForm(true);
+                      setEditingItem(null);
+                      setResourceForm({ title: '', category: 'article', url_or_storage_path: '', tags: [], description: '', image_url: '' });
+                    } }
+                    className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    Add New Resource
+                  </button>
+                </div>
+
+                {showResourceForm && (
+                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h3 className="text-lg font-semibold mb-4">
+                      {editingItem ? 'Edit Resource' : 'Add New Resource'}
+                    </h3>
+                    <form onSubmit={handleResourceSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={resourceForm.title}
+                          onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select
+                          value={resourceForm.category}
+                          onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value as any })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required
                         >
-                          Edit
+                          <option value="article">Article</option>
+                          <option value="guide">Guide</option>
+                          <option value="podcast">Podcast</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea
+                          value={resourceForm.description}
+                          onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          rows={3}
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Resource Image (optional)</label>
+                        <input
+                          type="file"
+                          onChange={(e) => setResourceImageFile(e.target.files ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          accept="image/*"
+                        />
+                        {resourceImageFile && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-500">Selected file: {resourceImageFile.name}</p>
+                            <img src={URL.createObjectURL(resourceImageFile)} alt="Resource Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                          </div>
+                        )}
+                        {resourceForm.image_url && !resourceImageFile && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-500">Current image:</p>
+                            <img src={resourceForm.image_url} alt="Current Resource Image" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                          </div>
+                        )}
+                        {uploadingResourceImage && <p className="text-su-blue text-sm mt-2">Uploading image...</p>}
+                        {uploadResourceImageError && <p className="text-red-500 text-sm mt-2">{uploadResourceImageError}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-black mb-1">URL or Storage Path</label>
+                        <input
+                          type="text"
+                          value={resourceForm.url_or_storage_path}
+                          onChange={(e) => setResourceForm({ ...resourceForm, url_or_storage_path: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="https://example.com/article OR /files/guide.pdf"
+                          required />
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          type="submit"
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                        >
+                          {editingItem ? 'Update Resource' : 'Add Resource'}
                         </button>
                         <button
-                          onClick={() => deleteResource(resource.id)}
-                          className="text-red-600 hover:text-red-900"
+                          type="button"
+                          onClick={() => {
+                            setShowResourceForm(false);
+                            setEditingItem(null);
+                          } }
+                          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
                         >
-                          Delete
+                          Cancel
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {resources.map((resource) => (
+                        <tr key={resource.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{resource.title}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{resource.category}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => editItem(resource, 'resource')}
+                              className="text-su-blue hover:text-blue-700 mr-4"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteResource(resource.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'councilleaders' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Manage Council Leaders</h2>
+                  <button
+                    onClick={() => {
+                      setShowCouncilLeaderForm(true);
+                      setEditingItem(null);
+                      setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
+                    } }
+                    className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    Add New Council Leader
+                  </button>
+                </div>
+
+                {showCouncilLeaderForm && (
+                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h3 className="text-lg font-semibold mb-4">
+                      {editingItem ? 'Edit Council Leader' : 'Add New Council Leader'}
+                    </h3>
+                    <form onSubmit={handleClubCouncilSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={councilLeaderForm.name}
+                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, name: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                        <input
+                          type="text"
+                          value={councilLeaderForm.role}
+                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, role: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                        <textarea
+                          value={councilLeaderForm.bio}
+                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, bio: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          rows={3}
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Council Leader Photo (optional)</label>
+                        <input
+                          type="file"
+                          onChange={(e) => setCouncilLeaderImageFile(e.target.files ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          accept="image/*"
+                        />
+                        {councilLeaderImageFile && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-500">Selected file: {councilLeaderImageFile.name}</p>
+                            <img src={URL.createObjectURL(councilLeaderImageFile)} alt="Council Leader Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                          </div>
+                        )}
+                        {councilLeaderForm.photo_url && !councilLeaderImageFile && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-500">Current photo:</p>
+                            <img src={councilLeaderForm.photo_url} alt="Current Council Leader Photo" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                          </div>
+                        )}
+                        {uploadingCouncilLeaderImage && <p className="text-su-blue text-sm mt-2">Uploading photo...</p>}
+                        {uploadCouncilLeaderImageError && <p className="text-red-500 text-sm mt-2">{uploadCouncilLeaderImageError}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                        <input
+                          type="text"
+                          value={councilLeaderForm.year}
+                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, year: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={councilLeaderForm.email}
+                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, email: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL (optional)</label>
+                        <input
+                          type="url"
+                          value={councilLeaderForm.linkedin_url}
+                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, linkedin_url: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL (optional)</label>
+                        <input
+                          type="url"
+                          value={councilLeaderForm.photo_url}
+                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, photo_url: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          type="submit"
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                        >
+                          {editingItem ? 'Update Council Leader' : 'Add Council Leader'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCouncilLeaderForm(false);
+                            setEditingItem(null);
+                          } }
+                          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {councilLeaders.map((leader) => (
+                        <tr key={leader.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.role}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.year}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => editItem(leader, 'clubcouncil')}
+                              className="text-su-blue hover:text-blue-700 mr-4"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteClubCouncilMember(leader.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'awareness' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Manage Monthly Awareness</h2>
+                  <button
+                    onClick={() => {
+                      setShowAwarenessForm(true);
+                      setEditingAwarenessId(null);
+                      setNewAwareness({
+                        month: '',
+                        theme: '',
+                        message: '',
+                        resource_url: '',
+                        icon: 'sun',
+                        banner_url: '',
+                        caption: ''
+                      });
+                    } }
+                    className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    Add New Awareness Entry
+                  </button>
+                </div>
+
+                {showAwarenessForm && (
+                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h3 className="text-lg font-semibold mb-4">
+                      {editingAwarenessId ? 'Edit Awareness Entry' : 'Add New Awareness Entry'}
+                    </h3>
+                    <form onSubmit={handleAwarenessSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                        <input
+                          type="text"
+                          value={newAwareness.month}
+                          onChange={(e) => setNewAwareness({ ...newAwareness, month: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
+                        <input
+                          type="text"
+                          value={newAwareness.theme}
+                          onChange={(e) => setNewAwareness({ ...newAwareness, theme: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                        <textarea
+                          value={newAwareness.message}
+                          onChange={(e) => setNewAwareness({ ...newAwareness, message: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          rows={3}
+                          required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Resource URL (optional)</label>
+                        <input
+                          type="url"
+                          value={newAwareness.resource_url}
+                          onChange={(e) => setNewAwareness({ ...newAwareness, resource_url: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+                        <select
+                          value={newAwareness.icon}
+                          onChange={(e) => setNewAwareness({ ...newAwareness, icon: e.target.value as any })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required
+                        >
+                          <option value="sun">Sun</option>
+                          <option value="heart">Heart</option>
+                          <option value="star">Star</option>
+                          <option value="leaf">Leaf</option>
+                          <option value="moon">Moon</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image (optional)</label>
+                        <input
+                          type="file"
+                          onChange={(e) => setMonthlyAwarenessImageFile(e.target.files ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          accept="image/*"
+                        />
+                        {monthlyAwarenessImageFile && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-500">Selected file: {monthlyAwarenessImageFile.name}</p>
+                            <img src={URL.createObjectURL(monthlyAwarenessImageFile)} alt="Banner Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                          </div>
+                        )}
+                        {newAwareness.banner_url && !monthlyAwarenessImageFile && (
+                          <div className="mt-2">
+                            <p className="text-sm text-gray-500">Current banner:</p>
+                            <img src={newAwareness.banner_url} alt="Current Banner" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                          </div>
+                        )}
+                        {uploadingMonthlyAwarenessImage && <p className="text-su-blue text-sm mt-2">Uploading banner...</p>}
+                        {uploadMonthlyAwarenessImageError && <p className="text-red-500 text-sm mt-2">{uploadMonthlyAwarenessImageError}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Caption (optional)</label>
+                        <input
+                          type="text"
+                          value={newAwareness.caption}
+                          onChange={(e) => setNewAwareness({ ...newAwareness, caption: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          type="submit"
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                        >
+                          {editingAwarenessId ? 'Update Awareness Entry' : 'Add Awareness Entry'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAwarenessForm(false);
+                            setEditingAwarenessId(null);
+                          } }
+                          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Theme</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {awarenessEntries.map((entry) => (
+                        <tr key={entry.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.month}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.theme}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => editAwareness(entry)}
+                              className="text-su-blue hover:text-blue-700 mr-4"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteAwareness(entry.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Council Leaders Tab */}
-        {activeTab === 'councilleaders' && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Manage Council Leaders</h2>
-              <button
-                onClick={() => {
-                  setShowCouncilLeaderForm(true);
-                  setEditingItem(null);
-                  setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
-                } }
-                className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Add New Council Leader
-              </button>
-            </div>
-
-            {showCouncilLeaderForm && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  {editingItem ? 'Edit Council Leader' : 'Add New Council Leader'}
-                </h3>
-                <form onSubmit={handleClubCouncilSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                    <input
-                      type="text"
-                      value={councilLeaderForm.name}
-                      onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                    <input
-                      type="text"
-                      value={councilLeaderForm.role}
-                      onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, role: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                    <textarea
-                      value={councilLeaderForm.bio}
-                      onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, bio: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      rows={3}
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Council Leader Photo (optional)</label>
-                    <input
-                      type="file"
-                      onChange={(e) => setCouncilLeaderImageFile(e.target.files ? e.target.files[0] : null)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      accept="image/*"
-                    />
-                    {councilLeaderImageFile && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">Selected file: {councilLeaderImageFile.name}</p>
-                        <img src={URL.createObjectURL(councilLeaderImageFile)} alt="Council Leader Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                      </div>
-                    )}
-                    {councilLeaderForm.photo_url && !councilLeaderImageFile && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">Current photo:</p>
-                        <img src={councilLeaderForm.photo_url} alt="Current Council Leader Photo" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                      </div>
-                    )}
-                    {uploadingCouncilLeaderImage && <p className="text-su-blue text-sm mt-2">Uploading photo...</p>}
-                    {uploadCouncilLeaderImageError && <p className="text-red-500 text-sm mt-2">{uploadCouncilLeaderImageError}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                    <input
-                      type="text"
-                      value={councilLeaderForm.year}
-                      onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, year: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={councilLeaderForm.email}
-                      onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL (optional)</label>
-                    <input
-                      type="url"
-                      value={councilLeaderForm.linkedin_url}
-                      onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, linkedin_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL (optional)</label>
-                    <input
-                      type="url"
-                      value={councilLeaderForm.photo_url}
-                      onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, photo_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      type="submit"
-                      className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    >
-                      {editingItem ? 'Update Council Leader' : 'Add Council Leader'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCouncilLeaderForm(false);
-                        setEditingItem(null);
-                      } }
-                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {councilLeaders.map((leader) => (
-                    <tr key={leader.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.role}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.year}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => editItem(leader, 'clubcouncil')}
-                          className="text-su-blue hover:text-blue-700 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteClubCouncilMember(leader.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Monthly Awareness Tab */}
-        {activeTab === 'awareness' && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Manage Monthly Awareness</h2>
-              <button
-                onClick={() => {
-                  setShowAwarenessForm(true);
-                  setEditingAwarenessId(null);
-                  setNewAwareness({
-                    month: '',
-                    theme: '',
-                    message: '',
-                    resource_url: '',
-                    icon: 'sun',
-                    banner_url: '',
-                    caption: ''
-                  });
-                } }
-                className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Add New Awareness Entry
-              </button>
-            </div>
-
-            {showAwarenessForm && (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4">
-                  {editingAwarenessId ? 'Edit Awareness Entry' : 'Add New Awareness Entry'}
-                </h3>
-                <form onSubmit={handleAwarenessSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                    <input
-                      type="text"
-                      value={newAwareness.month}
-                      onChange={(e) => setNewAwareness({ ...newAwareness, month: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
-                    <input
-                      type="text"
-                      value={newAwareness.theme}
-                      onChange={(e) => setNewAwareness({ ...newAwareness, theme: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                    <textarea
-                      value={newAwareness.message}
-                      onChange={(e) => setNewAwareness({ ...newAwareness, message: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      rows={3}
-                      required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Resource URL (optional)</label>
-                    <input
-                      type="url"
-                      value={newAwareness.resource_url}
-                      onChange={(e) => setNewAwareness({ ...newAwareness, resource_url: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
-                    <select
-                      value={newAwareness.icon}
-                      onChange={(e) => setNewAwareness({ ...newAwareness, icon: e.target.value as any })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      required
-                    >
-                      <option value="sun">Sun</option>
-                      <option value="heart">Heart</option>
-                      <option value="star">Star</option>
-                      <option value="leaf">Leaf</option>
-                      <option value="moon">Moon</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image (optional)</label>
-                    <input
-                      type="file"
-                      onChange={(e) => setMonthlyAwarenessImageFile(e.target.files ? e.target.files[0] : null)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                      accept="image/*"
-                    />
-                    {monthlyAwarenessImageFile && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">Selected file: {monthlyAwarenessImageFile.name}</p>
-                        <img src={URL.createObjectURL(monthlyAwarenessImageFile)} alt="Banner Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                      </div>
-                    )}
-                    {newAwareness.banner_url && !monthlyAwarenessImageFile && (
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">Current banner:</p>
-                        <img src={newAwareness.banner_url} alt="Current Banner" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                      </div>
-                    )}
-                    {uploadingMonthlyAwarenessImage && <p className="text-su-blue text-sm mt-2">Uploading banner...</p>}
-                    {uploadMonthlyAwarenessImageError && <p className="text-red-500 text-sm mt-2">{uploadMonthlyAwarenessImageError}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Caption (optional)</label>
-                    <input
-                      type="text"
-                      value={newAwareness.caption}
-                      onChange={(e) => setNewAwareness({ ...newAwareness, caption: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      type="submit"
-                      className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    >
-                      {editingAwarenessId ? 'Update Awareness Entry' : 'Add Awareness Entry'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAwarenessForm(false);
-                        setEditingAwarenessId(null);
-                      } }
-                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Theme</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {awarenessEntries.map((entry) => (
-                    <tr key={entry.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.month}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.theme}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => editAwareness(entry)}
-                          className="text-su-blue hover:text-blue-700 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteAwareness(entry.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>)}
+        </div>
       </div>
     </div>
   );
