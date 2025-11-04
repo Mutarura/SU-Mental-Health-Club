@@ -63,6 +63,9 @@ export default function Navbar() {
               <Link href="/events" className="block px-3 py-2 text-base font-medium text-su-black hover:text-su-blue hover:bg-gray-50">
                 Events
               </Link>
+              <Link href="/gallery" className="block px-3 py-2 text-base font-medium text-su-black hover:text-su-blue hover:bg-gray-50">
+                Gallery
+              </Link>
               <Link href="/resources" className="block px-3 py-2 text-base font-medium text-su-black hover:text-su-blue hover:bg-gray-50">
                 Resources
               </Link>
