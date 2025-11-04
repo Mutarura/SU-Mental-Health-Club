@@ -59,19 +59,24 @@ export default function GalleryPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('gallery_events')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('gallery_events')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching gallery events:', error);
+        if (error) {
+          console.warn('Database error (using fallback data):', error.message);
+          setGalleryEvents(DEFAULT_GALLERY_EVENTS);
+        } else {
+          setGalleryEvents(data && data.length > 0 ? data : DEFAULT_GALLERY_EVENTS);
+        }
+      } catch (dbError) {
+        console.warn('Database connection error (using fallback data):', dbError);
         setGalleryEvents(DEFAULT_GALLERY_EVENTS);
-      } else {
-        setGalleryEvents(data && data.length > 0 ? data : DEFAULT_GALLERY_EVENTS);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.warn('Error fetching gallery events:', error);
       setGalleryEvents(DEFAULT_GALLERY_EVENTS);
     } finally {
       setLoading(false);
