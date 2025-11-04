@@ -72,20 +72,25 @@ export default function EventsPreview() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .order('start', { ascending: true })
-        .limit(3);
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .order('start', { ascending: true })
+          .limit(3);
 
-      if (error) {
-        console.error('Error fetching events:', error);
+        if (error) {
+          console.warn('Database error (using fallback data):', error.message);
+          setEvents(DEFAULT_EVENTS);
+        } else {
+          setEvents(data && data.length > 0 ? data : DEFAULT_EVENTS);
+        }
+      } catch (dbError) {
+        console.warn('Database connection error (using fallback data):', dbError);
         setEvents(DEFAULT_EVENTS);
-      } else {
-        setEvents(data && data.length > 0 ? data : DEFAULT_EVENTS);
       }
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.warn('Error fetching events:', error);
       setEvents(DEFAULT_EVENTS);
     } finally {
       setLoading(false);
