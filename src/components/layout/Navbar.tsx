@@ -29,6 +29,9 @@ export default function Navbar() {
               <Link href="/events" className="text-su-black hover:text-su-blue px-3 py-2 rounded-md text-sm font-medium transition-colors">
                 Events
               </Link>
+              <Link href="/gallery" className="text-su-black hover:text-su-blue px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                Gallery
+              </Link>
               <Link href="/resources" className="text-su-black hover:text-su-blue px-3 py-2 rounded-md text-sm font-medium transition-colors">
                 Resources
               </Link>
