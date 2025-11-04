@@ -110,19 +110,24 @@ export default function ResourcesPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('resources')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('resources')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching resources:', error);
+        if (error) {
+          console.warn('Database error (using fallback data):', error.message);
+          setResources(DEFAULT_RESOURCES);
+        } else {
+          setResources(data && data.length > 0 ? data : DEFAULT_RESOURCES);
+        }
+      } catch (dbError) {
+        console.warn('Database connection error (using fallback data):', dbError);
         setResources(DEFAULT_RESOURCES);
-      } else {
-        setResources(data && data.length > 0 ? data : DEFAULT_RESOURCES);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.warn('Error fetching resources:', error);
       setResources(DEFAULT_RESOURCES);
     } finally {
       setLoading(false);
