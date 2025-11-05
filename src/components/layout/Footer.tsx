@@ -112,11 +112,11 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="mt-8 pt-8 border-t border-su-gold/30">
-          <p className="text-center text-sm">
+        <div className="mt-12 pt-12 border-t border-su-gold/40">
+          <p className="text-center text-sm text-white/90">
             &copy; {new Date().getFullYear()} Strathmore Mental Health Club. All rights reserved.
           </p>
-          <p className="text-center text-sm mt-2">
+          <p className="text-center text-xs mt-4 text-white/80">
             <strong>Privacy Statement:</strong> This site does not collect personal identifying data.
           </p>
         </div>
