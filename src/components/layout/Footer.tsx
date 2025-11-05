@@ -53,9 +53,9 @@ export default function Footer() {
   const data = footerData || defaultFooterData;
 
   return (
-    <footer className="bg-su-blue text-white py-8">
+    <footer className="bg-su-blue text-white py-16 mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 lg:gap-16">
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact</h3>
             <p className="mb-2">{data.med_centre_contact}</p>
