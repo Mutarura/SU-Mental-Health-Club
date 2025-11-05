@@ -157,11 +157,6 @@ export default function EventsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="text-center mb-12">
-          <div className="flex justify-center items-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center">
-              <CalendarIcon className="w-8 h-8 text-su-blue" />
-            </div>
-          </div>
           <h1 className="text-4xl font-bold text-su-blue mb-4">📅 Events</h1>
           <div className="w-24 h-1 bg-su-red mx-auto mb-6"></div>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">
