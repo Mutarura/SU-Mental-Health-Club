@@ -107,7 +107,7 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="mt-12 pt-12 border-t border-su-gold/40">
+        <div className="mt-12 pt-8">
           <p className="text-center text-sm text-white/90">
             &copy; {new Date().getFullYear()} Strathmore Mental Health Club. All rights reserved.
           </p>
