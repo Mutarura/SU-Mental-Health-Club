@@ -199,7 +199,8 @@ export default function ResourcesPage() {
               className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'articles' ? 'text-su-blue' : 'text-gray-800 hover:text-su-blue'}`}
             >
               <span className="inline-flex items-center gap-2">
-                Articles & Guides
+                <DocumentIcon className="w-5 h-5" />
+                📖 Articles & Guides
                 <span className={`${activeTab === 'articles' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'} inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5`}>{articlesAndGuides.length}</span>
               </span>
               {activeTab === 'articles' && (
