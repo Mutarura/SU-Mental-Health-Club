@@ -76,11 +76,13 @@ const DEFAULT_RESOURCES: Resource[] = [
 const getCategoryIcon = (category: string) => {
   const lowerCategory = category.toLowerCase();
   if (lowerCategory.includes('article') || lowerCategory.includes('blog')) {
-    return <DocumentIcon className="w-4 h-4 text-white" />;
+    return <DocumentIcon className="w-6 h-6 text-su-blue" />;
   } else if (lowerCategory.includes('guide') || lowerCategory.includes('help')) {
-    return <DocumentIcon className="w-4 h-4 text-white" />;
+    return <BookIcon className="w-6 h-6 text-green-600" />;
+  } else if (lowerCategory.includes('podcast')) {
+    return <SoundIcon className="w-6 h-6 text-purple-600" />;
   } else {
-    return <BookIcon className="w-4 h-4 text-white" />;
+    return <LightbulbIcon className="w-6 h-6 text-yellow-600" />;
   }
 };
 
