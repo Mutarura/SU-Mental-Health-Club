@@ -18,12 +18,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const isAdminPage = pathname === '/admin';
+  const isAdminPage = pathname.startsWith('/admin');
 
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased min-h-screen flex flex-col`}>
-        <Navbar />
+        {!isAdminPage && <Navbar />}
         <main className="flex-grow">
           {children}
         </main>
