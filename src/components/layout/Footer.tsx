@@ -53,65 +53,65 @@ export default function Footer() {
   const data = footerData || defaultFooterData;
 
   return (
-    <footer className="bg-su-blue text-white py-8">
+    <footer className="bg-su-blue text-white py-16 mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Contact</h3>
-            <p className="mb-2">{data.med_centre_contact}</p>
-            <p className="mb-2">
-              <a href={`mailto:${data.club_email}`} className="hover:text-su-gold">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 lg:gap-16">
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold mb-6">📞 Contact</h3>
+            <p className="text-sm leading-relaxed">{data.med_centre_contact}</p>
+            <p>
+              <a href={`mailto:${data.club_email}`} className="text-sm hover:text-su-gold transition-colors">
                 {data.club_email}
               </a>
             </p>
           </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Emergency Contacts</h3>
-            <p className="mb-2" dangerouslySetInnerHTML={{ __html: data.emergency_numbers }}></p>
+
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold mb-6">🆘 Emergency Contacts</h3>
+            <p className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: data.emergency_numbers }}></p>
           </div>
-          
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
+
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold mb-6">🔗 Quick Links</h3>
+            <ul className="space-y-3">
               <li>
-                <Link href="/events" className="hover:text-su-gold">
-                  Events
+                <Link href="/events" className="text-sm hover:text-su-gold transition-colors flex items-center">
+                  📅 Events
                 </Link>
               </li>
               <li>
-                <Link href="/resources" className="hover:text-su-gold">
-                  Resources
+                <Link href="/gallery" className="text-sm hover:text-su-gold transition-colors flex items-center">
+                  📸 Gallery
                 </Link>
               </li>
               <li>
-                <Link href="/peer-support" className="hover:text-su-gold">
-                  Peer Support
+                <Link href="/resources" className="text-sm hover:text-su-gold transition-colors flex items-center">
+                  📚 Resources
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="hover:text-su-gold">
-                  About Us
+                <Link href="/about" className="text-sm hover:text-su-gold transition-colors flex items-center">
+                  ℹ️ About Us
                 </Link>
               </li>
             </ul>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
-            <div className="flex space-x-4">
-              <a href="https://www.instagram.com/su_mentalhealthclub/" target="_blank" rel="noopener noreferrer" className="hover:text-su-gold">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold mb-6">Follow Us</h3>
+            <div className="flex items-center space-x-4">
+              <a href="https://www.instagram.com/su_mentalhealthclub/" target="_blank" rel="noopener noreferrer" className="hover:text-su-gold transition-colors transform hover:scale-110">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
               </a>
             </div>
           </div>
         </div>
         
-        <div className="mt-8 pt-8 border-t border-su-gold/30">
-          <p className="text-center text-sm">
+        <div className="mt-12 pt-8">
+          <p className="text-center text-sm text-white/90">
             &copy; {new Date().getFullYear()} Strathmore Mental Health Club. All rights reserved.
           </p>
-          <p className="text-center text-sm mt-2">
+          <p className="text-center text-xs mt-4 text-white/80">
             <strong>Privacy Statement:</strong> This site does not collect personal identifying data.
           </p>
         </div>

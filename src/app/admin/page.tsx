@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, uploadImageToStorage } from '../../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import Image from 'next/image';
-import type { Event, Resource, Quote, CouncilLeader } from '../../types/database.types';
+import type { Event, Resource, Quote, CouncilLeader, GalleryEvent, GalleryImage } from '../../types/database.types';
 import { 
   HomeIcon, 
   ChatIcon, 
@@ -13,11 +12,9 @@ import {
   PeopleIcon, 
   UserIcon,
   DocumentIcon,
-  EmailIcon,
   SunIcon
 } from '../../components/icons';
 import { MONTHLY_AWARENESS as DEFAULT_AWARENESS } from '../../data/monthlyAwareness';
-// duplicate import removed – DEFAULT_AWARENESS already imported above
 
 interface AdminStats {
   totalEvents: number;
@@ -25,7 +22,10 @@ interface AdminStats {
   totalQuotes: number;
   totalCouncilLeaders: number;
   totalAwareness: number;
+  totalGalleryEvents: number;
 }
+
+type AdminTab = 'dashboard' | 'gallery' | 'events' | 'resources' | 'council' | 'awareness';
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -38,21 +38,86 @@ export default function AdminPage() {
   const [fullName, setFullName] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+
   const [stats, setStats] = useState<AdminStats>({
     totalEvents: 0,
     totalResources: 0,
     totalAwareness: 0,
     totalQuotes: 0,
-    totalCouncilLeaders: 0
+    totalCouncilLeaders: 0,
+    totalGalleryEvents: 0,
   });
 
-  // Active tab state
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'events' | 'resources' | 'councilleaders' | 'awareness'>('dashboard');
+  // Gallery states
+  const [galleryEvents, setGalleryEvents] = useState<GalleryEvent[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [showGalleryForm, setShowGalleryForm] = useState(false);
+  const [editingGalleryId, setEditingGalleryId] = useState<string | null>(null);
+  const [galleryForm, setGalleryForm] = useState({ title: '', short_description: '', cover_image: '' });
+  const [galleryImageFile, setGalleryImageFile] = useState<File | null>(null);
+  const [uploadingGalleryImage, setUploadingGalleryImage] = useState(false);
+  const [uploadGalleryImageError, setUploadGalleryImageError] = useState<string | null>(null);
+  const [showGalleryImageUpload, setShowGalleryImageUpload] = useState<string | null>(null);
+  const [galleryImageForm, setGalleryImageForm] = useState({ caption: '' });
+  const [galleryImageFile2, setGalleryImageFile2] = useState<File | null>(null);
 
-  // Monthly Awareness states
+  // Event states
+  const [events, setEvents] = useState<Event[]>([]);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [eventForm, setEventForm] = useState({ 
+    title: '', 
+    slug: '',
+    description: '', 
+    start: '', 
+    end: '',
+    location: '', 
+    calendar_link: '',
+    image_url: '' 
+  });
+  const [eventImageFile, setEventImageFile] = useState<File | null>(null);
+  const [uploadingEventImage, setUploadingEventImage] = useState(false);
+  const [uploadEventImageError, setUploadEventImageError] = useState<string | null>(null);
+
+  // Resource states
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [showResourceForm, setShowResourceForm] = useState(false);
+  const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
+  const [resourceForm, setResourceForm] = useState({
+    title: '',
+    category: 'article' as 'article' | 'guide' | 'podcast',
+    url_or_storage_path: '',
+    tags: [] as string[],
+    description: '',
+    image_url: ''
+  });
+  const [resourceImageFile, setResourceImageFile] = useState<File | null>(null);
+  const [uploadingResourceImage, setUploadingResourceImage] = useState(false);
+  const [uploadResourceImageError, setUploadResourceImageError] = useState<string | null>(null);
+
+  // Council states
+  const [councilLeaders, setCouncilLeaders] = useState<CouncilLeader[]>([]);
+  const [showCouncilForm, setShowCouncilForm] = useState(false);
+  const [editingCouncilId, setEditingCouncilId] = useState<string | null>(null);
+  const [councilForm, setCouncilForm] = useState({
+    name: '',
+    role: '',
+    bio: '',
+    year: '',
+    email: '',
+    linkedin_url: '',
+    photo_url: ''
+  });
+  const [councilImageFile, setCouncilImageFile] = useState<File | null>(null);
+  const [uploadingCouncilImage, setUploadingCouncilImage] = useState(false);
+  const [uploadCouncilImageError, setUploadCouncilImageError] = useState<string | null>(null);
+
+  // Awareness states
   const [awarenessEntries, setAwarenessEntries] = useState<any[]>([]);
+  const [showAwarenessForm, setShowAwarenessForm] = useState(false);
   const [editingAwarenessId, setEditingAwarenessId] = useState<string | null>(null);
-  const [newAwareness, setNewAwareness] = useState({
+  const [awarenessForm, setAwarenessForm] = useState({
     month: '',
     theme: '',
     message: '',
@@ -61,13 +126,10 @@ export default function AdminPage() {
     banner_url: '',
     caption: ''
   });
+  const [awarenessImageFile, setAwarenessImageFile] = useState<File | null>(null);
+  const [uploadingAwarenessImage, setUploadingAwarenessImage] = useState(false);
 
-  // Data arrays - only essential tables
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [events, setEvents] = useState<Array<{ id: string; title: string; date?: string; location: string }>>([]);
-  const [resources, setResources] = useState<Resource[]>([]);
-  const [councilLeaders, setCouncilLeaders] = useState<CouncilLeader[]>([]);
-
+  // Auth and initialization
   useEffect(() => {
     if (!supabase) {
       setLoading(false);
@@ -92,609 +154,247 @@ export default function AdminPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (supabase) {
-      const channel = supabase.channel('quotes-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'quotes' }, fetchQuotes)
-        .subscribe();
-      return () => {
-        channel.unsubscribe();
-      };
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    if (supabase) {
-      const channel = supabase.channel('events-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, fetchEvents)
-        .subscribe();
-      return () => {
-        channel.unsubscribe();
-      };
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    if (supabase) {
-      const channel = supabase.channel('resources-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, fetchResources)
-        .subscribe();
-      return () => {
-        channel.unsubscribe();
-      };
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    if (supabase) {
-      const channel = supabase.channel('council_leaders-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'council_leaders' }, fetchClubCouncil)
-        .subscribe();
-      return () => {
-        channel.unsubscribe();
-      };
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    if (supabase) {
-      const channel = supabase.channel('monthly_awareness-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'monthly_awareness' }, fetchMonthlyAwareness)
-        .subscribe();
-      return () => {
-        channel.unsubscribe();
-      };
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    if (user) {
-      fetchStats();
-      fetchQuotes();
-      fetchEvents();
-      fetchResources();
-      fetchClubCouncil();
-      fetchMonthlyAwareness();
-    }
-  }, [user]);
-
+  // Message auto-clear
   useEffect(() => {
     if (message) {
-      const timer = setTimeout(() => {
-        setMessage('');
-      }, 5000); // Clear message after 5 seconds
+      const timer = setTimeout(() => setMessage(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [message]);
 
+  // Realtime subscriptions
+  useEffect(() => {
+    if (!user) return;
 
-  // Form visibility states - only essential forms
-  const [showQuoteForm, setShowQuoteForm] = useState(false);
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [showResourceForm, setShowResourceForm] = useState(false);
-  const [showCouncilLeaderForm, setShowCouncilLeaderForm] = useState(false);
-  const [showAwarenessForm, setShowAwarenessForm] = useState(false);
+    fetchStats();
+    fetchGalleryData();
+    fetchEvents();
+    fetchResources();
+    fetchCouncilLeaders();
+    fetchAwareness();
 
-  // Form data states - only essential forms
-  const [quoteForm, setQuoteForm] = useState({ text: '', author: '' });
-  const [eventForm, setEventForm] = useState({ 
-    title: '', 
-    slug: '',
-    description: '', 
-    start: '', 
-    end: '',
-    location: '', 
-    calendar_link: '',
-    image_url: '' 
-  });
-  const [eventImageFile, setEventImageFile] = useState<File | null>(null);
-  const [eventImagePreview, setEventImagePreview] = useState<string | null>(null);
-  const [uploadingEventImage, setUploadingEventImage] = useState(false);
-  const [uploadEventImageError, setUploadEventImageError] = useState<string | null>(null);
+    const channels = [
+      supabase?.channel('gallery-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'gallery_events' }, fetchGalleryData),
+      supabase?.channel('events-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, fetchEvents),
+      supabase?.channel('resources-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, fetchResources),
+      supabase?.channel('council-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'council_leaders' }, fetchCouncilLeaders),
+      supabase?.channel('awareness-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'monthly_awareness' }, fetchAwareness),
+    ];
 
-  const [resourceForm, setResourceForm] = useState({
-    title: '',
-    category: 'article' as 'article' | 'guide' | 'podcast',
-    url_or_storage_path: '',
-    tags: [] as string[],
-    description: '',
-    image_url: ''
-  });
-  const [resourceImageFile, setResourceImageFile] = useState<File | null>(null);
-  const [uploadingResourceImage, setUploadingResourceImage] = useState(false);
-  const [uploadResourceImageError, setUploadResourceImageError] = useState<string | null>(null);
-  const [councilLeaderForm, setCouncilLeaderForm] = useState({
-    name: '',
-    role: '',
-    bio: '',
-    year: '',
-    email: '',
-    linkedin_url: '',
-    photo_url: ''
-  });
-  const [councilLeaderImageFile, setCouncilLeaderImageFile] = useState<File | null>(null);
-  const [uploadingCouncilLeaderImage, setUploadingCouncilLeaderImage] = useState(false);
-  const [uploadCouncilLeaderImageError, setUploadCouncilLeaderImageError] = useState<string | null>(null);
+    channels.forEach(ch => ch?.subscribe());
 
-  // Editing state
-  const [editingItem, setEditingItem] = useState<any>(null);
-
-
-
-
+    return () => {
+      channels.forEach(ch => ch?.unsubscribe());
+    };
+  }, [user]);
 
   // Fetch functions
-  const fetchQuotes = async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('quotes').select('*').order('created_at', { ascending: false });
-    if (!error) setQuotes(data || []);
-  };
-
-
-
-  const fetchEvents = async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('events').select('*').order('start', { ascending: true });
-    if (!error) setEvents(data || []);
-  };
-
-
-
-  const fetchResources = async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('resources').select('*').order('created_at', { ascending: false });
-    if (!error) setResources(data || []);
-  };
-
-
-
-  const fetchClubCouncil = async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('council_leaders').select('*').order('created_at', { ascending: false });
-    if (!error) setCouncilLeaders(data || []);
-  };
-
-  const fetchAboutContent = async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('about').select('*').single();
-    if (!error && data) {
-      // aboutContent state removed; nothing to set here
-    }
-  };
-
-  const fetchFooterContent = async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('footer').select('*').single();
-    if (!error) {
-      // footerContent state removed; nothing to set here
-    }
-  };
-
-  const fetchTeamMembers = async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase.from('team_members').select('*').order('created_at', { ascending: false });
-    if (!error) setCouncilLeaders(data || []);
-  };
-
-  // Club Council CRUD operations
-  const handleClubCouncilSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUploadingCouncilLeaderImage(true);
-    setUploadCouncilLeaderImageError(null);
-
-    let photoUrl = councilLeaderForm.photo_url;
-    if (councilLeaderImageFile) {
-      try {
-        const publicUrl = await uploadImageToStorage(councilLeaderImageFile, 'council_members');
-        photoUrl = publicUrl ?? '';
-      } catch (error: any) {
-        setUploadCouncilLeaderImageError(error.message);
-        setUploadingCouncilLeaderImage(false);
-        return;
-      }
-    }
-
-    try {
-      const { error } = editingItem
-        ? await supabase!
-            .from('council_leaders')
-            .update({ ...councilLeaderForm, photo_url: photoUrl })
-            .eq('id', editingItem.id)
-        : await supabase!
-            .from('council_leaders')
-            .insert([{ ...councilLeaderForm, photo_url: photoUrl }]);
-
-      if (error) throw error;
-      fetchClubCouncil();
-      setShowCouncilLeaderForm(false);
-      setEditingItem(null);
-      setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
-      setCouncilLeaderImageFile(null);
-      setMessage(editingItem ? 'Council Leader updated successfully!' : 'Council Leader added successfully!');
-    } catch (error: any) {
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setUploadingCouncilLeaderImage(false);
-    }
-  };
-
-  const deleteClubCouncilMember = async (id: string) => {
-    if (!supabase) return;
-    if (confirm('Are you sure you want to delete this council leader?')) {
-      const { error } = await supabase.from('council_leaders').delete().eq('id', id);
-      if (!error) {
-        setMessage('Council leader deleted successfully!');
-        fetchClubCouncil();
-        fetchStats();
-      }
-    }
-  };
-
-  // Team Members CRUD operations
-  const handleTeamMemberSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) {
-      setMessage('Database not configured');
-      return;
-    }
-
-    try {
-      if (editingItem) {
-        const { error } = await supabase
-          .from('team_members')
-          .update(councilLeaderForm)
-          .eq('id', editingItem.id);
-        if (!error) {
-          setMessage('Team member updated successfully!');
-          setEditingItem(null);
-          await fetchTeamMembers();
-        }
-      } else {
-        const { data, error } = await supabase.from('team_members').insert([councilLeaderForm]).select();
-        if (!error && data) {
-          setCouncilLeaders([data[0], ...councilLeaders]);
-          setMessage('Team member added successfully!');
-        }
-      }
-
-setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
-setShowCouncilLeaderForm(false);
-    } catch (error) {
-      setMessage('Error saving team member');
-    }
-  };
-
-  const deleteTeamMember = async (id: string) => {
-    if (!supabase) return;
-    if (confirm('Are you sure you want to delete this team member?')) {
-      const { error } = await supabase.from('team_members').delete().eq('id', id);
-      if (!error) {
-        setMessage('Team member deleted successfully!');
-        fetchTeamMembers();
-      }
-    }
-  };
-
-  // Load data when user is authenticated
-
-
-  const fetchMonthlyAwareness = async () => {
-    if (!supabase) return;
-    const { data, error } = await supabase
-      .from('monthly_awareness')
-      .select('*')
-      .order('created_at', { ascending: true });
-    if (!error) setAwarenessEntries(data || DEFAULT_AWARENESS);
-  };
-
-  const editAwareness = (entry: any) => {
-    setEditingAwarenessId(entry.id);
-    setNewAwareness({
-      month: entry.month || '',
-      theme: entry.theme || '',
-      message: entry.message || '',
-      resource_url: entry.resource_url || '',
-      icon: entry.icon || 'sun',
-      banner_url: entry.banner_url || '',
-      caption: entry.caption || ''
-    });
-    setShowAwarenessForm(true);
-  };
-
-  const [monthlyAwarenessImageFile, setMonthlyAwarenessImageFile] = useState<File | null>(null);
-  const [uploadingMonthlyAwarenessImage, setUploadingMonthlyAwarenessImage] = useState(false);
-  const [uploadMonthlyAwarenessImageError, setUploadMonthlyAwarenessImageError] = useState<string | null>(null);
-
-  const handleAwarenessSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) {
-      setMessage('Database not configured');
-      return;
-    }
-
-    setUploadingMonthlyAwarenessImage(true);
-    setUploadMonthlyAwarenessImageError(null);
-
-    let bannerUrl = newAwareness.banner_url;
-    if (monthlyAwarenessImageFile) {
-      try {
-        const publicUrl = await uploadImageToStorage(monthlyAwarenessImageFile, 'monthly_awareness');
-        bannerUrl = publicUrl ?? '';
-      } catch (error: any) {
-        setUploadMonthlyAwarenessImageError(error.message);
-        setMessage(`Error uploading banner image: ${error.message}`);
-        setUploadingMonthlyAwarenessImage(false);
-        return;
-      }
-    }
-
-    try {
-      if (editingAwarenessId) {
-        const { error } = await supabase
-          .from('monthly_awareness')
-          .update({
-            month: newAwareness.month,
-            theme: newAwareness.theme,
-            message: newAwareness.message,
-            resource_url: newAwareness.resource_url || null,
-            icon: newAwareness.icon,
-            banner_url: bannerUrl || null,
-            caption: newAwareness.caption || null,
-          })
-          .eq('id', editingAwarenessId);
-
-        if (!error) {
-          setAwarenessEntries((prev) =>
-            prev.map((a) =>
-              a.id === editingAwarenessId
-                ? { ...a, ...newAwareness, banner_url: bannerUrl }
-                : a
-            )
-          );
-          setMessage('Awareness entry updated successfully!');
-          setEditingAwarenessId(null);
-          setShowAwarenessForm(false);
-          await fetchStats();
-        }
-      } else {
-        const { data, error } = await supabase
-          .from('monthly_awareness')
-          .insert([{
-            month: newAwareness.month,
-            theme: newAwareness.theme,
-            message: newAwareness.message,
-            resource_url: newAwareness.resource_url || null,
-            icon: newAwareness.icon,
-            banner_url: bannerUrl || null,
-            caption: newAwareness.caption || null,
-          }])
-          .select();
-
-        if (!error && data) {
-          setAwarenessEntries([data[0], ...awarenessEntries]);
-          setMessage('Awareness entry added successfully!');
-          setShowAwarenessForm(false);
-          await fetchStats();
-        }
-      }
-
-      setNewAwareness({
-        month: '',
-        theme: '',
-        message: '',
-        resource_url: '',
-        icon: 'sun',
-        banner_url: '',
-        caption: ''
-      });
-      setMonthlyAwarenessImageFile(null);
-    } catch (error: any) {
-      setMessage(`Error saving awareness entry: ${error.message}`);
-    } finally {
-      setUploadingMonthlyAwarenessImage(false);
-    }
-  };
-
-  const deleteAwareness = async (id: string) => {
-    if (!supabase) return;
-    if (confirm('Are you sure you want to delete this awareness entry?')) {
-      const { error } = await supabase
-        .from('monthly_awareness')
-        .delete()
-        .eq('id', id);
-
-      if (!error) {
-        setAwarenessEntries((prev) => prev.filter((a) => a.id !== id));
-        setMessage('Awareness entry deleted successfully!');
-        await fetchStats();
-      }
-    }
-  };
-
-
-
   const fetchStats = async () => {
     if (!supabase) return;
     try {
-      const [eventsRes, resourcesRes, quotesRes, councilRes, awarenessRes] = await Promise.all([
+      const [events, resources, awareness, gallery] = await Promise.all([
         supabase.from('events').select('id', { count: 'exact' }),
         supabase.from('resources').select('id', { count: 'exact' }),
-        supabase.from('quotes').select('id', { count: 'exact' }),
-        supabase.from('council_leaders').select('id', { count: 'exact' }),
         supabase.from('monthly_awareness').select('id', { count: 'exact' }),
+        supabase.from('gallery_events').select('id', { count: 'exact' }),
       ]);
 
       setStats({
-        totalEvents: eventsRes.count || 0,
-        totalResources: resourcesRes.count || 0,
-        totalAwareness: awarenessRes.count || 0,
-        totalQuotes: quotesRes.count || 0,
-        totalCouncilLeaders: councilRes.count || 0
+        totalEvents: events.count || 0,
+        totalResources: resources.count || 0,
+        totalAwareness: awareness.count || 0,
+        totalQuotes: 0,
+        totalCouncilLeaders: 0,
+        totalGalleryEvents: gallery.count || 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) {
-      setMessage('Database not configured');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setMessage('Passwords do not match');
-      return;
-    }
-
-    setAuthLoading(true);
-    setMessage('');
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: 'admin'
-          }
-        }
-      });
-
-      if (error) {
-        setMessage(error.message);
-      } else {
-        setMessage('Check your email for the confirmation link!');
-      }
-    } catch (error) {
-      setMessage('An error occurred during signup');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleQuoteSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) {
-      setMessage('Database not configured');
-      return;
-    }
-
-    setAuthLoading(true);
-
-    try {
-      if (editingItem) {
-        const { error } = await supabase
-          .from('quotes')
-          .update(quoteForm)
-          .eq('id', editingItem.id);
-        if (!error) {
-          setMessage('Quote updated successfully!');
-          setEditingItem(null);
-          // Fetch updated quotes to refresh the UI
-          await fetchQuotes();
-          await fetchStats();
-        }
-      } else {
-        const { data, error } = await supabase.from('quotes').insert([quoteForm]).select();
-        if (!error && data) {
-          // Update local state with the new quote
-          setQuotes([data[0], ...quotes]);
-          setMessage('Quote added successfully!');
-          // Refresh stats
-          await fetchStats();
-        }
-      }
-
-      setQuoteForm({ text: '', author: '' });
-      setShowQuoteForm(false);
-    } catch (error) {
-      console.error('Error saving quote:', error);
-      setMessage('Error saving quote. Please try again.');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const deleteQuote = async (id: string) => {
+  const fetchGalleryData = async () => {
     if (!supabase) return;
-    if (confirm('Are you sure you want to delete this quote?')) {
-      const { error } = await supabase.from('quotes').delete().eq('id', id);
-      if (!error) {
-        setMessage('Quote deleted successfully!');
-        fetchQuotes();
-        fetchStats();
-      }
+    try {
+      const { data: events } = await supabase.from('gallery_events').select('*').order('created_at', { ascending: false });
+      const { data: images } = await supabase.from('gallery_images').select('*').order('display_order', { ascending: true });
+      if (events) setGalleryEvents(events);
+      if (images) setGalleryImages(images);
+    } catch (error) {
+      console.error('Error fetching gallery:', error);
     }
   };
 
+  const fetchEvents = async () => {
+    if (!supabase) return;
+    const { data } = await supabase.from('events').select('*').order('start', { ascending: true });
+    if (data) setEvents(data);
+  };
+
+  const fetchResources = async () => {
+    if (!supabase) return;
+    const { data } = await supabase.from('resources').select('*').order('created_at', { ascending: false });
+    if (data) setResources(data);
+  };
+
+  const fetchCouncilLeaders = async () => {
+    if (!supabase) return;
+    const { data } = await supabase.from('council_leaders').select('*').order('created_at', { ascending: false });
+    if (data) setCouncilLeaders(data);
+  };
+
+  const fetchAwareness = async () => {
+    if (!supabase) return;
+    const { data } = await supabase.from('monthly_awareness').select('*').order('created_at', { ascending: true });
+    if (data) setAwarenessEntries(data || DEFAULT_AWARENESS);
+  };
+
+  // GALLERY CRUD
+  const handleGallerySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+
+    setUploadingGalleryImage(true);
+    let coverUrl = galleryForm.cover_image;
+
+    if (galleryImageFile) {
+      try {
+        const publicUrl = await uploadImageToStorage(galleryImageFile, 'gallery');
+        coverUrl = publicUrl ?? '';
+      } catch (error: any) {
+        setUploadGalleryImageError(error.message);
+        setUploadingGalleryImage(false);
+        return;
+      }
+    }
+
+    try {
+      const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const payload = {
+        title: galleryForm.title,
+        slug: slugify(galleryForm.title),
+        short_description: galleryForm.short_description,
+        cover_image: coverUrl || null,
+      };
+
+      if (editingGalleryId) {
+        await supabase.from('gallery_events').update(payload).eq('id', editingGalleryId);
+        setMessage('Gallery event updated successfully!');
+      } else {
+        await supabase.from('gallery_events').insert([payload]);
+        setMessage('Gallery event added successfully!');
+      }
+
+      setShowGalleryForm(false);
+      setEditingGalleryId(null);
+      setGalleryForm({ title: '', short_description: '', cover_image: '' });
+      setGalleryImageFile(null);
+      fetchGalleryData();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setUploadingGalleryImage(false);
+    }
+  };
+
+  const deleteGalleryEvent = async (id: string) => {
+    if (!supabase) return;
+    if (!confirm('Delete this gallery event and all images?')) return;
+    try {
+      await supabase.from('gallery_images').delete().eq('gallery_event_id', id);
+      await supabase.from('gallery_events').delete().eq('id', id);
+      setMessage('Gallery event deleted successfully!');
+      fetchGalleryData();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    }
+  };
+
+  const handleAddGalleryImage = async (e: React.FormEvent, galleryEventId: string) => {
+    e.preventDefault();
+    if (!supabase || !galleryImageFile2) return;
+
+    try {
+      const publicUrl = await uploadImageToStorage(galleryImageFile2, 'gallery');
+      const maxOrder = galleryImages.filter(img => img.gallery_event_id === galleryEventId).length;
+      
+      await supabase.from('gallery_images').insert([{
+        gallery_event_id: galleryEventId,
+        image_url: publicUrl,
+        caption: galleryImageForm.caption || null,
+        display_order: maxOrder + 1,
+      }]);
+
+      setMessage('Image added successfully!');
+      setShowGalleryImageUpload(null);
+      setGalleryImageForm({ caption: '' });
+      setGalleryImageFile2(null);
+      fetchGalleryData();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    }
+  };
+
+  const deleteGalleryImage = async (id: string) => {
+    if (!supabase) return;
+    if (!confirm('Delete this image?')) return;
+    try {
+      await supabase.from('gallery_images').delete().eq('id', id);
+      setMessage('Image deleted successfully!');
+      fetchGalleryData();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    }
+  };
+
+  // EVENT CRUD
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) {
-      setMessage('Database not configured');
-      return;
-    }
+    if (!supabase) return;
 
     setUploadingEventImage(true);
-    setUploadEventImageError(null);
-
-    const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
     let imageUrl = eventForm.image_url;
+
     if (eventImageFile) {
       try {
         const publicUrl = await uploadImageToStorage(eventImageFile, 'events');
         imageUrl = publicUrl ?? '';
       } catch (error: any) {
         setUploadEventImageError(error.message);
-        setMessage(`Error uploading event image: ${error.message}`);
         setUploadingEventImage(false);
         return;
       }
     }
 
     try {
-      if (editingItem) {
-        const updatePayload = {
-          title: eventForm.title,
-          description: eventForm.description,
-          location: eventForm.location,
-          image_url: imageUrl || null,
-          start: new Date(eventForm.start).toISOString(),
-          end: new Date(eventForm.end).toISOString(),
-        };
-        const { error } = await supabase.from('events').update(updatePayload).eq('id', editingItem.id);
-        if (!error) {
-          setMessage('Event updated successfully!');
-          setEditingItem(null);
-          await fetchEvents();
-          await fetchStats();
-        }
+      const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const payload = {
+        title: eventForm.title,
+        slug: slugify(eventForm.title),
+        description: eventForm.description,
+        location: eventForm.location,
+        image_url: imageUrl || null,
+        start: new Date(eventForm.start).toISOString(),
+        end: new Date(eventForm.end).toISOString(),
+      };
+
+      if (editingEventId) {
+        await supabase.from('events').update(payload).eq('id', editingEventId);
+        setMessage('Event updated successfully!');
       } else {
-        const insertPayload = {
-          title: eventForm.title,
-          slug: slugify(eventForm.title),
-          description: eventForm.description,
-          location: eventForm.location,
-          image_url: imageUrl || null,
-          start: new Date(eventForm.start).toISOString(),
-          end: new Date(eventForm.end).toISOString(),
-          calendar_link: null,
-        };
-        const { data, error } = await supabase.from('events').insert([insertPayload]).select();
-        if (!error && data) {
-          setEvents([data[0], ...events]);
-          setMessage('Event added successfully!');
-          await fetchStats();
-        }
+        await supabase.from('events').insert([payload]);
+        setMessage('Event added successfully!');
       }
-      setEventForm({ title: '', slug: '', description: '', start: '', end: '', location: '', calendar_link: '', image_url: '' });
+
       setShowEventForm(false);
+      setEditingEventId(null);
+      setEventForm({ title: '', slug: '', description: '', start: '', end: '', location: '', calendar_link: '', image_url: '' });
       setEventImageFile(null);
-    } catch (error) {
-      setMessage('Error saving event');
+      fetchEvents();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
     } finally {
       setUploadingEventImage(false);
     }
@@ -702,28 +402,40 @@ setShowCouncilLeaderForm(false);
 
   const deleteEvent = async (id: string) => {
     if (!supabase) return;
-    if (confirm('Are you sure you want to delete this event?')) {
-      const { error } = await supabase.from('events').delete().eq('id', id);
-      if (!error) {
-        setMessage('Event deleted successfully!');
-        fetchEvents();
-        fetchStats();
-      }
+    if (!confirm('Delete this event?')) return;
+    try {
+      await supabase.from('events').delete().eq('id', id);
+      setMessage('Event deleted successfully!');
+      fetchEvents();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
     }
   };
 
-  // CRUD Operations for Resources
+  const editEvent = (event: Event) => {
+    setEditingEventId(event.id);
+    setEventForm({
+      title: event.title,
+      slug: event.slug,
+      description: event.description,
+      start: event.start.substring(0, 16),
+      end: event.end.substring(0, 16),
+      location: event.location,
+      calendar_link: event.calendar_link || '',
+      image_url: event.image_url || '',
+    });
+    setShowEventForm(true);
+  };
+
+  // RESOURCE CRUD
   const handleResourceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) {
-      setMessage('Database not configured');
-      return;
-    }
+    if (!supabase) return;
 
     setUploadingResourceImage(true);
-    setUploadResourceImageError(null);
-
     let imageUrl = resourceForm.image_url;
+
     if (resourceImageFile) {
       try {
         const publicUrl = await uploadImageToStorage(resourceImageFile, 'resources');
@@ -731,29 +443,34 @@ setShowCouncilLeaderForm(false);
       } catch (error: any) {
         setUploadResourceImageError(error.message);
         setUploadingResourceImage(false);
-        setMessage(`Error uploading image: ${error.message}`);
         return;
       }
     }
 
     try {
-      const { error } = editingItem
-        ? await supabase
-            .from('resources')
-            .update({ ...resourceForm, image_url: imageUrl })
-            .eq('id', editingItem.id)
-        : await supabase
-            .from('resources')
-            .insert([{ ...resourceForm, image_url: imageUrl }]);
+      const payload = {
+        title: resourceForm.title,
+        category: resourceForm.category,
+        description: resourceForm.description,
+        url_or_storage_path: resourceForm.url_or_storage_path,
+        image_url: imageUrl || null,
+        tags: resourceForm.tags,
+      };
 
-      if (error) throw error;
-      fetchResources();
+      if (editingResourceId) {
+        await supabase.from('resources').update(payload).eq('id', editingResourceId);
+        setMessage('Resource updated successfully!');
+      } else {
+        await supabase.from('resources').insert([payload]);
+        setMessage('Resource added successfully!');
+      }
+
       setShowResourceForm(false);
-      setEditingItem(null);
+      setEditingResourceId(null);
       setResourceForm({ title: '', category: 'article', url_or_storage_path: '', tags: [], description: '', image_url: '' });
       setResourceImageFile(null);
-      setMessage(editingItem ? 'Resource updated successfully!' : 'Resource added successfully!');
-      await fetchStats();
+      fetchResources();
+      fetchStats();
     } catch (error: any) {
       setMessage(`Error: ${error.message}`);
     } finally {
@@ -763,53 +480,185 @@ setShowCouncilLeaderForm(false);
 
   const deleteResource = async (id: string) => {
     if (!supabase) return;
-    if (confirm('Are you sure you want to delete this resource?')) {
-      const { error } = await supabase.from('resources').delete().eq('id', id);
-      if (!error) {
-        setMessage('Resource deleted successfully!');
-        fetchResources();
-        fetchStats();
-      }
-    }
-  };
-
-
-  // About Content Update
-  const handleAboutUpdate = async (field: 'mission_text' | 'story_text' | 'collaboration_note' | 'image_url', value: string) => {
-    if (!supabase) return;
+    if (!confirm('Delete this resource?')) return;
     try {
-      const updateData = { [field]: value };
-      const { error } = await supabase
-        .from('about')
-        .update(updateData)
-        .eq('id', 1);
-      if (!error) {
-        setMessage(`${field} updated successfully!`);
-        fetchAboutContent();
-      }
-    } catch {
-      setMessage(`Error updating ${field}`);
+      await supabase.from('resources').delete().eq('id', id);
+      setMessage('Resource deleted successfully!');
+      fetchResources();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
     }
   };
 
-  // Footer Contact Update
-  const handleFooterUpdate = async (field: 'med_centre_contact' | 'club_email' | 'emergency_numbers', value: string) => {
+  const editResource = (resource: Resource) => {
+    setEditingResourceId(resource.id);
+    setResourceForm({
+      title: resource.title,
+      category: (resource.category as 'article' | 'guide' | 'podcast') || 'article',
+      description: resource.description,
+      url_or_storage_path: resource.url_or_storage_path || '',
+      tags: resource.tags || [],
+      image_url: resource.image_url || '',
+    });
+    setShowResourceForm(true);
+  };
+
+  // COUNCIL CRUD
+  const handleCouncilSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!supabase) return;
-    try {
-      const updateData = { [field]: value };
-      const { error } = await supabase
-        .from('footer')
-        .update(updateData)
-        .eq('id', 1);
-      if (!error) {
-        setMessage(`${field} updated successfully!`);
-        fetchFooterContent();
+
+    setUploadingCouncilImage(true);
+    let photoUrl = councilForm.photo_url;
+
+    if (councilImageFile) {
+      try {
+        const publicUrl = await uploadImageToStorage(councilImageFile, 'council_members');
+        photoUrl = publicUrl ?? '';
+      } catch (error: any) {
+        setUploadCouncilImageError(error.message);
+        setUploadingCouncilImage(false);
+        return;
       }
-    } catch {
-      setMessage(`Error updating ${field}`);
+    }
+
+    try {
+      const payload = {
+        name: councilForm.name,
+        role: councilForm.role,
+        bio: councilForm.bio,
+        year: councilForm.year,
+        email: councilForm.email,
+        linkedin_url: councilForm.linkedin_url || null,
+        photo_url: photoUrl || null,
+      };
+
+      if (editingCouncilId) {
+        await supabase.from('council_leaders').update(payload).eq('id', editingCouncilId);
+        setMessage('Council member updated successfully!');
+      } else {
+        await supabase.from('council_leaders').insert([payload]);
+        setMessage('Council member added successfully!');
+      }
+
+      setShowCouncilForm(false);
+      setEditingCouncilId(null);
+      setCouncilForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
+      setCouncilImageFile(null);
+      fetchCouncilLeaders();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setUploadingCouncilImage(false);
     }
   };
 
+  const deleteCouncilMember = async (id: string) => {
+    if (!supabase) return;
+    if (!confirm('Delete this council member?')) return;
+    try {
+      await supabase.from('council_leaders').delete().eq('id', id);
+      setMessage('Council member deleted successfully!');
+      fetchCouncilLeaders();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    }
+  };
+
+  const editCouncilMember = (member: CouncilLeader) => {
+    setEditingCouncilId(member.id);
+    setCouncilForm({
+      name: member.name,
+      role: member.role,
+      bio: member.bio,
+      year: member.year,
+      email: member.email,
+      linkedin_url: member.linkedin_url || '',
+      photo_url: member.photo_url || '',
+    });
+    setShowCouncilForm(true);
+  };
+
+  // AWARENESS CRUD
+  const handleAwarenessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+
+    setUploadingAwarenessImage(true);
+    let bannerUrl = awarenessForm.banner_url;
+
+    if (awarenessImageFile) {
+      try {
+        const publicUrl = await uploadImageToStorage(awarenessImageFile, 'monthly_awareness');
+        bannerUrl = publicUrl ?? '';
+      } catch (error: any) {
+        setUploadingAwarenessImage(false);
+        setMessage(`Error: ${error.message}`);
+        return;
+      }
+    }
+
+    try {
+      const payload = {
+        month: awarenessForm.month,
+        theme: awarenessForm.theme,
+        message: awarenessForm.message,
+        resource_url: awarenessForm.resource_url || null,
+        icon: awarenessForm.icon,
+        banner_url: bannerUrl || null,
+        caption: awarenessForm.caption || null,
+      };
+
+      if (editingAwarenessId) {
+        await supabase.from('monthly_awareness').update(payload).eq('id', editingAwarenessId);
+        setMessage('Awareness entry updated successfully!');
+      } else {
+        await supabase.from('monthly_awareness').insert([payload]);
+        setMessage('Awareness entry added successfully!');
+      }
+
+      setShowAwarenessForm(false);
+      setEditingAwarenessId(null);
+      setAwarenessForm({ month: '', theme: '', message: '', resource_url: '', icon: 'sun', banner_url: '', caption: '' });
+      setAwarenessImageFile(null);
+      fetchAwareness();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setUploadingAwarenessImage(false);
+    }
+  };
+
+  const deleteAwareness = async (id: string) => {
+    if (!supabase) return;
+    if (!confirm('Delete this awareness entry?')) return;
+    try {
+      await supabase.from('monthly_awareness').delete().eq('id', id);
+      setMessage('Awareness entry deleted successfully!');
+      fetchAwareness();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    }
+  };
+
+  const editAwareness = (entry: any) => {
+    setEditingAwarenessId(entry.id);
+    setAwarenessForm({
+      month: entry.month || '',
+      theme: entry.theme || '',
+      message: entry.message || '',
+      resource_url: entry.resource_url || '',
+      icon: entry.icon || 'sun',
+      banner_url: entry.banner_url || '',
+      caption: entry.caption || '',
+    });
+    setShowAwarenessForm(true);
+  };
+
+  // AUTH
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) {
@@ -818,78 +667,49 @@ setShowCouncilLeaderForm(false);
     }
 
     setAuthLoading(true);
-    setMessage('');
-
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setMessage(error.message);
+    } catch (error) {
+      setMessage('Sign in failed');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setMessage('Passwords do not match');
+      return;
+    }
+
+    if (!supabase) {
+      setMessage('Database not configured');
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: { data: { full_name: fullName, role: 'admin' } }
       });
-
-      if (error) {
-        setMessage(error.message);
-      }
+      if (error) setMessage(error.message);
+      else setMessage('Check your email for confirmation!');
     } catch (error) {
-      setMessage('An error occurred during sign in');
+      setMessage('Sign up failed');
     } finally {
       setAuthLoading(false);
     }
   };
 
   const handleSignOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
   };
 
-  const editItem = (item: Event | Resource | Quote | CouncilLeader, type: string) => {
-    setEditingItem(item);
-    switch (type) {
-      case 'quote':
-        setQuoteForm({ text: (item as Quote).text, author: (item as Quote).author });
-        setShowQuoteForm(true);
-        break;
-      case 'event':
-        const eventItem = item as Event;
-        setEventForm({
-          title: eventItem.title || '',
-          slug: eventItem.slug || '',
-          description: eventItem.description || '',
-          start: eventItem.start ? eventItem.start.substring(0, 16) : '',
-          end: eventItem.end ? (eventItem.end as string).substring(0, 16) : '',
-          location: eventItem.location || '',
-          calendar_link: eventItem.calendar_link || '',
-          image_url: eventItem.image_url || ''
-        });
-        setShowEventForm(true);
-        break;
-      case 'resource':
-        const resourceItem = item as Resource;
-        setResourceForm({
-          title: resourceItem.title || '',
-          description: resourceItem.description || '',
-          category: (resourceItem.category as 'article' | 'guide' | 'podcast') || 'article',
-          url_or_storage_path: resourceItem.url_or_storage_path || '',
-          tags: resourceItem.tags || [],
-          image_url: resourceItem.image_url || ''
-        });
-        setShowResourceForm(true);
-        break;
-      case 'clubcouncil':
-        const councilLeaderItem = item as CouncilLeader;
-        setCouncilLeaderForm({
-          name: councilLeaderItem.name || '',
-          role: councilLeaderItem.role || '',
-          bio: councilLeaderItem.bio || '',
-          year: councilLeaderItem.year || '',
-          email: councilLeaderItem.email || '',
-          linkedin_url: councilLeaderItem.linkedin_url || '',
-          photo_url: councilLeaderItem.photo_url || ''
-        });
-        setShowCouncilLeaderForm(true);
-        break;
-    }
-  };
-
+  // LOADING
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -901,26 +721,22 @@ setShowCouncilLeaderForm(false);
     );
   }
 
+  // AUTH FORMS
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              Admin Access
-            </h2>
+            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Admin Access</h2>
             <p className="mt-2 text-sm text-gray-600">
               {isLogin ? 'Sign in to access the admin dashboard' : 'Create an admin account'}
             </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={isLogin ? handleSignIn : handleSignUp}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <input
                 type="email"
-                id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
@@ -929,43 +745,22 @@ setShowCouncilLeaderForm(false);
             </div>
 
             {!isLogin && (
-              <>
-                <div>
-                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                    required
-                  />
-                </div>
-              </>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
+                  required
+                />
+              </div>
             )}
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
                 type="password"
-                id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
@@ -975,24 +770,19 @@ setShowCouncilLeaderForm(false);
 
             {!isLogin && (
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
                 <input
                   type="password"
-                  id="confirmPassword"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
                   required
                 />
-            </div>
+              </div>
             )}
 
             {message && (
-              <div className="p-3 rounded-md text-sm bg-red-50 text-red-700 border border-red-200">
-                {message}
-              </div>
+              <div className="p-3 rounded-md text-sm bg-red-50 text-red-700 border border-red-200">{message}</div>
             )}
 
             <button
@@ -1018,8 +808,6 @@ setShowCouncilLeaderForm(false);
     );
   }
 
-
-
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -1027,7 +815,7 @@ setShowCouncilLeaderForm(false);
           <h2 className="text-2xl font-bold text-gray-900">Access Restricted</h2>
           <p className="text-gray-600">This dashboard is for admin users only.</p>
           <button
-            onClick={async () => { await supabase?.auth.signOut(); }}
+            onClick={handleSignOut}
             className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
           >
             Sign Out
@@ -1037,57 +825,40 @@ setShowCouncilLeaderForm(false);
     );
   }
 
+  // ADMIN DASHBOARD
   return (
     <div className="min-h-screen bg-gray-100">
-
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-
         {message && (
-          <div className="mb-6 p-4 rounded-md bg-green-50 text-green-700 border border-green-200">
-            {message}
-          </div>
+          <div className="mb-6 p-4 rounded-md bg-green-50 text-green-700 border border-green-200">{message}</div>
         )}
 
         <div className="flex gap-6">
-          {/* Sidebar */}
+          {/* Sidebar Navigation */}
           <aside className="w-64 bg-white border border-gray-200 rounded-xl h-fit p-4">
             <div className="mb-4">
               <h2 className="text-lg font-semibold text-gray-900">SMHC Admin</h2>
-              {user && (
-                <p className="mt-1 text-sm text-gray-600">{user.email}</p>
-              )}
+              <p className="mt-1 text-sm text-gray-600">{user?.email}</p>
             </div>
             <nav className="space-y-2">
-              <button
-                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'dashboard' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
-                onClick={() => setActiveTab('dashboard')}
-              >
-                <HomeIcon className="w-5 h-5 mr-2" /> Dashboard Overview
-              </button>
-              <button
-                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'events' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
-                onClick={() => setActiveTab('events')}
-              >
-                <CalendarIcon className="w-5 h-5 mr-2" /> Manage Events
-              </button>
-              <button
-                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'resources' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
-                onClick={() => setActiveTab('resources')}
-              >
-                <BookIcon className="w-5 h-5 mr-2" /> Manage Resources
-              </button>
-              <button
-                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'councilleaders' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
-                onClick={() => setActiveTab('councilleaders')}
-              >
-                <PeopleIcon className="w-5 h-5 mr-2" /> Manage Team
-              </button>
-              <button
-                className={`w-full text-left flex items-center px-3 py-2 rounded-md ${activeTab === 'awareness' ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'}`}
-                onClick={() => setActiveTab('awareness')}
-              >
-                <SunIcon className="w-5 h-5 mr-2" /> Monthly Awareness
-              </button>
+              {[
+                { id: 'dashboard' as const, label: 'Dashboard Overview', icon: HomeIcon },
+                { id: 'gallery' as const, label: '📸 Gallery Manager', icon: null },
+                { id: 'events' as const, label: '📅 Event Manager', icon: CalendarIcon },
+                { id: 'resources' as const, label: '📚 Resource Manager', icon: BookIcon },
+                { id: 'council' as const, label: '🧑‍🤝‍🧑 Council Management', icon: PeopleIcon },
+                { id: 'awareness' as const, label: 'Monthly Awareness', icon: SunIcon },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
+                    activeTab === tab.id ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
               <div className="pt-4 border-t border-gray-200 mt-4">
                 <button
                   onClick={handleSignOut}
@@ -1099,304 +870,348 @@ setShowCouncilLeaderForm(false);
             </nav>
           </aside>
 
-          {/* Main content */}
+          {/* Main Content */}
           <div className="flex-1">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600 text-sm">View your dashboard summary</p>
-            </div>
-
             {activeTab === 'dashboard' && (
               <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard Overview</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="bg-white rounded-lg shadow-md p-6">
                     <div className="flex items-center">
-                      <div className="p-3 rounded-full bg-blue-100 text-su-blue">
-                        <ChatIcon className="w-6 h-6" />
-                      </div>
+                      <div className="p-3 rounded-full bg-blue-100 text-su-blue"><CalendarIcon className="w-6 h-6" /></div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Total Quotes</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.totalQuotes}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 rounded-full bg-purple-100 text-purple-600">
-                        <PeopleIcon className="w-6 h-6" />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Council Leaders</p>
-                        <p className="text-2xl font-bold text-gray-900">{stats.totalCouncilLeaders}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex items-center">
-                      <div className="p-3 rounded-full bg-blue-100 text-su-blue">
-                        <CalendarIcon className="w-6 h-6" />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Total Events</p>
+                        <p className="text-sm font-medium text-gray-600">Events</p>
                         <p className="text-2xl font-bold text-gray-900">{stats.totalEvents}</p>
                       </div>
                     </div>
                   </div>
-
                   <div className="bg-white rounded-lg shadow-md p-6">
                     <div className="flex items-center">
-                      <div className="p-3 rounded-full bg-green-100 text-green-600">
-                        <BookIcon className="w-6 h-6" />
-                      </div>
+                      <div className="p-3 rounded-full bg-green-100 text-green-600"><BookIcon className="w-6 h-6" /></div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Total Resources</p>
+                        <p className="text-sm font-medium text-gray-600">Resources</p>
                         <p className="text-2xl font-bold text-gray-900">{stats.totalResources}</p>
                       </div>
                     </div>
                   </div>
-
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-purple-100 text-purple-600"><PeopleIcon className="w-6 h-6" /></div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Gallery Events</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalGalleryEvents}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {activeTab === 'quotes' && (
+            {/* GALLERY TAB */}
+            {activeTab === 'gallery' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Manage Quotes</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">📸 Gallery Manager</h2>
                   <button
                     onClick={() => {
-                      setShowQuoteForm(true);
-                      setEditingItem(null);
-                      setQuoteForm({ text: '', author: '' });
-                    } }
+                      setShowGalleryForm(true);
+                      setEditingGalleryId(null);
+                      setGalleryForm({ title: '', short_description: '', cover_image: '' });
+                    }}
                     className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                   >
-                    Add New Quote
+                    Add Gallery Event
                   </button>
                 </div>
 
-                {showQuoteForm && (
+                {showGalleryForm && (
                   <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                     <h3 className="text-lg font-semibold mb-4">
-                      {editingItem ? 'Edit Quote' : 'Add New Quote'}
+                      {editingGalleryId ? 'Edit Gallery Event' : 'Add Gallery Event'}
                     </h3>
-                    <form onSubmit={handleQuoteSubmit} className="space-y-4">
+                    <form onSubmit={handleGallerySubmit} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Quote Text</label>
-                        <textarea
-                          value={quoteForm.text}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, text: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          rows={3}
-                          required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                         <input
                           type="text"
-                          value={quoteForm.author}
-                          onChange={(e) => setQuoteForm({ ...quoteForm, author: e.target.value })}
+                          value={galleryForm.title}
+                          onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea
+                          value={galleryForm.short_description}
+                          onChange={(e) => setGalleryForm({ ...galleryForm, short_description: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          rows={3}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image</label>
+                        <input
+                          type="file"
+                          onChange={(e) => setGalleryImageFile(e.target.files ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          accept="image/*"
+                        />
+                        {uploadingGalleryImage && <p className="text-su-blue text-sm mt-2">Uploading...</p>}
+                        {uploadGalleryImageError && <p className="text-red-500 text-sm mt-2">{uploadGalleryImageError}</p>}
                       </div>
                       <div className="flex space-x-2">
                         <button
                           type="submit"
-                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                          disabled={uploadingGalleryImage}
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {editingItem ? 'Update Quote' : 'Add Quote'}
+                          {editingGalleryId ? 'Update' : 'Add'}
                         </button>
                         <button
                           type="button"
                           onClick={() => {
-                            setShowQuoteForm(false);
-                            setEditingItem(null);
-                          } }
-                          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                            setShowGalleryForm(false);
+                            setEditingGalleryId(null);
+                          }}
+                          className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
                         >
                           Cancel
                         </button>
                       </div>
                     </form>
-                </div>
-              )}
+                  </div>
+                )}
 
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quote</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {quotes.map((quote) => (
-                        <tr key={quote.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{quote.text}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{quote.author}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => editItem(quote, 'quote')}
-                              className="text-su-blue hover:text-blue-700 mr-4"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => deleteQuote(quote.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-6">
+                  {galleryEvents.map(event => (
+                    <div key={event.id} className="bg-white rounded-lg shadow-md p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
+                          <p className="text-sm text-gray-600">{event.short_description}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingGalleryId(event.id);
+                              setGalleryForm({
+                                title: event.title,
+                                short_description: event.short_description,
+                                cover_image: event.cover_image || '',
+                              });
+                              setShowGalleryForm(true);
+                            }}
+                            className="text-su-blue hover:text-blue-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteGalleryEvent(event.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Images for this gallery event */}
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3">Images ({galleryImages.filter(img => img.gallery_event_id === event.id).length})</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                          {galleryImages.filter(img => img.gallery_event_id === event.id).map(image => (
+                            <div key={image.id} className="relative">
+                              <img
+                                src={image.image_url}
+                                alt={image.caption || 'Gallery image'}
+                                className="w-full h-32 object-cover rounded-md"
+                              />
+                              <button
+                                onClick={() => deleteGalleryImage(image.id)}
+                                className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {showGalleryImageUpload === event.id ? (
+                          <form onSubmit={(e) => handleAddGalleryImage(e, event.id)} className="border-t pt-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                              <input
+                                type="file"
+                                onChange={(e) => setGalleryImageFile2(e.target.files ? e.target.files[0] : null)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900"
+                                accept="image/*"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1 mt-3">Caption</label>
+                              <input
+                                type="text"
+                                value={galleryImageForm.caption}
+                                onChange={(e) => setGalleryImageForm({ ...galleryImageForm, caption: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900"
+                              />
+                            </div>
+                            <div className="flex space-x-2 mt-3">
+                              <button
+                                type="submit"
+                                className="bg-su-blue text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                              >
+                                Upload
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowGalleryImageUpload(null)}
+                                className="bg-gray-300 text-gray-800 px-3 py-1 rounded-md text-sm hover:bg-gray-400"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <button
+                            onClick={() => setShowGalleryImageUpload(event.id)}
+                            className="text-sm text-su-blue hover:text-blue-700 font-medium"
+                          >
+                            + Add Image
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
+            {/* EVENTS TAB */}
             {activeTab === 'events' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Manage Events</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">📅 Event Manager</h2>
                   <button
                     onClick={() => {
                       setShowEventForm(true);
-                      setEditingItem(null);
+                      setEditingEventId(null);
                       setEventForm({ title: '', slug: '', description: '', start: '', end: '', location: '', calendar_link: '', image_url: '' });
                     }}
                     className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                   >
-                    Add New Event
+                    Add Event
                   </button>
                 </div>
-                  {showEventForm && (
+
+                {showEventForm && (
                   <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                  <h3 className="text-lg font-semibold mb-4">
-                    {editingItem ? 'Edit Event' : 'Add New Event'}
-                  </h3>
-                  <form onSubmit={handleEventSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                      <input
-                        type="text"
-                        value={eventForm.title}
-                        onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                        required />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                      <textarea
-                        value={eventForm.description}
-                        onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                        rows={3}
-                        required />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h3 className="text-lg font-semibold mb-4">{editingEventId ? 'Edit Event' : 'Add Event'}</h3>
+                    <form onSubmit={handleEventSubmit} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                         <input
-                          type="datetime-local"
-                          value={eventForm.start}
-                          onChange={(e) => setEventForm({ ...eventForm, start: e.target.value })}
+                          type="text"
+                          value={eventForm.title}
+                          onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
+                          required
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                        <input
-                          type="datetime-local"
-                          value={eventForm.end}
-                          onChange={(e) => setEventForm({ ...eventForm, end: e.target.value })}
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea
+                          value={eventForm.description}
+                          onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
+                          rows={3}
+                          required
+                        />
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                      <input
-                        type="text"
-                        value={eventForm.location}
-                        onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                        required />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Event Image</label>
-                      <input
-                        type="file"
-                        onChange={(e) => setEventImageFile(e.target.files ? e.target.files[0] : null)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                        accept="image/*" />
-                      {eventImageFile && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-500">Selected file: {eventImageFile.name}</p>
-                          <img src={URL.createObjectURL(eventImageFile)} alt="Event Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                          <input
+                            type="datetime-local"
+                            value={eventForm.start}
+                            onChange={(e) => setEventForm({ ...eventForm, start: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                            required
+                          />
                         </div>
-                      )}
-                      {eventForm.image_url && !eventImageFile && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-500">Current image:</p>
-                          <img src={eventForm.image_url} alt="Current Event Image" className="mt-2 h-20 w-20 object-cover rounded-md" />
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                          <input
+                            type="datetime-local"
+                            value={eventForm.end}
+                            onChange={(e) => setEventForm({ ...eventForm, end: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                            required
+                          />
                         </div>
-                      )}
-                      {uploadingEventImage && <p className="text-su-blue text-sm mt-2">Uploading image...</p>}
-                      {uploadEventImageError && <p className="text-red-500 text-sm mt-2">{uploadEventImageError}</p>}
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        type="submit"
-                        className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                      >
-                        {editingItem ? 'Update Event' : 'Add Event'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowEventForm(false);
-                          setEditingItem(null);
-                          setEventImageFile(null); // Clear file on form close
-                          setEventImagePreview(null); // Clear preview on form close
-                          setUploadingEventImage(false);
-                          setUploadEventImageError(null);
-                        } }
-                        className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <input
+                          type="text"
+                          value={eventForm.location}
+                          onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                        <input
+                          type="file"
+                          onChange={(e) => setEventImageFile(e.target.files ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                          accept="image/*"
+                        />
+                        {uploadingEventImage && <p className="text-su-blue text-sm mt-2">Uploading...</p>}
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          type="submit"
+                          disabled={uploadingEventImage}
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {editingEventId ? 'Update' : 'Add'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowEventForm(false)}
+                          className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 )}
 
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {events.map((event) => (
+                      {events.map(event => (
                         <tr key={event.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{event.title}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-            {(event as any).start ? new Date((event as any).start).toLocaleDateString() : 'N/A'}
-                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(event.start).toLocaleDateString()}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{event.location}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                             <button
-                              onClick={() => editItem(event as Event, 'event')}
-                              className="text-su-blue hover:text-blue-700 mr-4"
+                              onClick={() => editEvent(event)}
+                              className="text-su-blue hover:text-blue-700"
                             >
                               Edit
                             </button>
@@ -1415,28 +1230,26 @@ setShowCouncilLeaderForm(false);
               </div>
             )}
 
-
+            {/* RESOURCES TAB */}
             {activeTab === 'resources' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Manage Resources</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">📚 Resource Manager</h2>
                   <button
                     onClick={() => {
                       setShowResourceForm(true);
-                      setEditingItem(null);
+                      setEditingResourceId(null);
                       setResourceForm({ title: '', category: 'article', url_or_storage_path: '', tags: [], description: '', image_url: '' });
-                    } }
+                    }}
                     className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                   >
-                    Add New Resource
+                    Add Resource
                   </button>
                 </div>
 
                 {showResourceForm && (
                   <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h3 className="text-lg font-semibold mb-4">
-                      {editingItem ? 'Edit Resource' : 'Add New Resource'}
-                    </h3>
+                    <h3 className="text-lg font-semibold mb-4">{editingResourceId ? 'Edit Resource' : 'Add Resource'}</h3>
                     <form onSubmit={handleResourceSubmit} className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
@@ -1444,15 +1257,16 @@ setShowCouncilLeaderForm(false);
                           type="text"
                           value={resourceForm.title}
                           onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                          required
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                         <select
                           value={resourceForm.category}
                           onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value as any })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
                           required
                         >
                           <option value="article">Article</option>
@@ -1465,57 +1279,42 @@ setShowCouncilLeaderForm(false);
                         <textarea
                           value={resourceForm.description}
                           onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
                           rows={3}
-                          required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Resource Image (optional)</label>
-                        <input
-                          type="file"
-                          onChange={(e) => setResourceImageFile(e.target.files ? e.target.files[0] : null)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          accept="image/*"
+                          required
                         />
-                        {resourceImageFile && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500">Selected file: {resourceImageFile.name}</p>
-                            <img src={URL.createObjectURL(resourceImageFile)} alt="Resource Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                          </div>
-                        )}
-                        {resourceForm.image_url && !resourceImageFile && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500">Current image:</p>
-                            <img src={resourceForm.image_url} alt="Current Resource Image" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                          </div>
-                        )}
-                        {uploadingResourceImage && <p className="text-su-blue text-sm mt-2">Uploading image...</p>}
-                        {uploadResourceImageError && <p className="text-red-500 text-sm mt-2">{uploadResourceImageError}</p>}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-black mb-1">URL or Storage Path</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
                         <input
                           type="text"
                           value={resourceForm.url_or_storage_path}
                           onChange={(e) => setResourceForm({ ...resourceForm, url_or_storage_path: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="https://example.com/article OR /files/guide.pdf"
-                          required />
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                        <input
+                          type="file"
+                          onChange={(e) => setResourceImageFile(e.target.files ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                          accept="image/*"
+                        />
+                        {uploadingResourceImage && <p className="text-su-blue text-sm mt-2">Uploading...</p>}
                       </div>
                       <div className="flex space-x-2">
                         <button
                           type="submit"
-                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                          disabled={uploadingResourceImage}
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {editingItem ? 'Update Resource' : 'Add Resource'}
+                          {editingResourceId ? 'Update' : 'Add'}
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setShowResourceForm(false);
-                            setEditingItem(null);
-                          } }
-                          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                          onClick={() => setShowResourceForm(false)}
+                          className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
                         >
                           Cancel
                         </button>
@@ -1528,20 +1327,20 @@ setShowCouncilLeaderForm(false);
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {resources.map((resource) => (
+                      {resources.map(resource => (
                         <tr key={resource.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{resource.title}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{resource.category}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                             <button
-                              onClick={() => editItem(resource, 'resource')}
-                              className="text-su-blue hover:text-blue-700 mr-4"
+                              onClick={() => editResource(resource)}
+                              className="text-su-blue hover:text-blue-700"
                             >
                               Edit
                             </button>
@@ -1560,126 +1359,102 @@ setShowCouncilLeaderForm(false);
               </div>
             )}
 
-            {activeTab === 'councilleaders' && (
+            {/* COUNCIL TAB */}
+            {activeTab === 'council' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Manage Council Leaders</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">🧑‍🤝‍🧑 Council Management</h2>
                   <button
                     onClick={() => {
-                      setShowCouncilLeaderForm(true);
-                      setEditingItem(null);
-                      setCouncilLeaderForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
-                    } }
+                      setShowCouncilForm(true);
+                      setEditingCouncilId(null);
+                      setCouncilForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
+                    }}
                     className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                   >
-                    Add New Council Leader
+                    Add Member
                   </button>
                 </div>
 
-                {showCouncilLeaderForm && (
+                {showCouncilForm && (
                   <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h3 className="text-lg font-semibold mb-4">
-                      {editingItem ? 'Edit Council Leader' : 'Add New Council Leader'}
-                    </h3>
-                    <form onSubmit={handleClubCouncilSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                        <input
-                          type="text"
-                          value={councilLeaderForm.name}
-                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, name: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                        <input
-                          type="text"
-                          value={councilLeaderForm.role}
-                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, role: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
+                    <h3 className="text-lg font-semibold mb-4">{editingCouncilId ? 'Edit Member' : 'Add Member'}</h3>
+                    <form onSubmit={handleCouncilSubmit} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                          <input
+                            type="text"
+                            value={councilForm.name}
+                            onChange={(e) => setCouncilForm({ ...councilForm, name: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                          <input
+                            type="text"
+                            value={councilForm.role}
+                            onChange={(e) => setCouncilForm({ ...councilForm, role: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                            required
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
                         <textarea
-                          value={councilLeaderForm.bio}
-                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, bio: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          value={councilForm.bio}
+                          onChange={(e) => setCouncilForm({ ...councilForm, bio: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
                           rows={3}
-                          required />
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                          <input
+                            type="text"
+                            value={councilForm.year}
+                            onChange={(e) => setCouncilForm({ ...councilForm, year: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <input
+                            type="email"
+                            value={councilForm.email}
+                            onChange={(e) => setCouncilForm({ ...councilForm, email: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                            required
+                          />
+                        </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Council Leader Photo (optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
                         <input
                           type="file"
-                          onChange={(e) => setCouncilLeaderImageFile(e.target.files ? e.target.files[0] : null)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          onChange={(e) => setCouncilImageFile(e.target.files ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
                           accept="image/*"
                         />
-                        {councilLeaderImageFile && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500">Selected file: {councilLeaderImageFile.name}</p>
-                            <img src={URL.createObjectURL(councilLeaderImageFile)} alt="Council Leader Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                          </div>
-                        )}
-                        {councilLeaderForm.photo_url && !councilLeaderImageFile && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500">Current photo:</p>
-                            <img src={councilLeaderForm.photo_url} alt="Current Council Leader Photo" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                          </div>
-                        )}
-                        {uploadingCouncilLeaderImage && <p className="text-su-blue text-sm mt-2">Uploading photo...</p>}
-                        {uploadCouncilLeaderImageError && <p className="text-red-500 text-sm mt-2">{uploadCouncilLeaderImageError}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                        <input
-                          type="text"
-                          value={councilLeaderForm.year}
-                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, year: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input
-                          type="email"
-                          value={councilLeaderForm.email}
-                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, email: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL (optional)</label>
-                        <input
-                          type="url"
-                          value={councilLeaderForm.linkedin_url}
-                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, linkedin_url: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Photo URL (optional)</label>
-                        <input
-                          type="url"
-                          value={councilLeaderForm.photo_url}
-                          onChange={(e) => setCouncilLeaderForm({ ...councilLeaderForm, photo_url: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
+                        {uploadingCouncilImage && <p className="text-su-blue text-sm mt-2">Uploading...</p>}
                       </div>
                       <div className="flex space-x-2">
                         <button
                           type="submit"
-                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                          disabled={uploadingCouncilImage}
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {editingItem ? 'Update Council Leader' : 'Add Council Leader'}
+                          {editingCouncilId ? 'Update' : 'Add'}
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setShowCouncilLeaderForm(false);
-                            setEditingItem(null);
-                          } }
-                          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                          onClick={() => setShowCouncilForm(false)}
+                          className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
                         >
                           Cancel
                         </button>
@@ -1688,169 +1463,114 @@ setShowCouncilLeaderForm(false);
                   </div>
                 )}
 
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {councilLeaders.map((leader) => (
-                        <tr key={leader.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.role}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{leader.year}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => editItem(leader, 'clubcouncil')}
-                              className="text-su-blue hover:text-blue-700 mr-4"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => deleteClubCouncilMember(leader.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {councilLeaders.map(leader => (
+                    <div key={leader.id} className="bg-white rounded-lg shadow-md p-6">
+                      {leader.photo_url && (
+                        <img
+                          src={leader.photo_url}
+                          alt={leader.name}
+                          className="w-full h-48 object-cover rounded-md mb-4"
+                        />
+                      )}
+                      <h3 className="text-lg font-semibold text-gray-900">{leader.name}</h3>
+                      <p className="text-sm text-su-blue font-medium">{leader.role}</p>
+                      <p className="text-sm text-gray-600 mt-2">{leader.bio}</p>
+                      <div className="flex space-x-2 mt-4">
+                        <button
+                          onClick={() => editCouncilMember(leader)}
+                          className="flex-1 text-su-blue hover:text-blue-700 font-medium text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteCouncilMember(leader.id)}
+                          className="flex-1 text-red-600 hover:text-red-900 font-medium text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
+            {/* AWARENESS TAB */}
             {activeTab === 'awareness' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Manage Monthly Awareness</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Monthly Awareness</h2>
                   <button
                     onClick={() => {
                       setShowAwarenessForm(true);
                       setEditingAwarenessId(null);
-                      setNewAwareness({
-                        month: '',
-                        theme: '',
-                        message: '',
-                        resource_url: '',
-                        icon: 'sun',
-                        banner_url: '',
-                        caption: ''
-                      });
-                    } }
+                      setAwarenessForm({ month: '', theme: '', message: '', resource_url: '', icon: 'sun', banner_url: '', caption: '' });
+                    }}
                     className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                   >
-                    Add New Awareness Entry
+                    Add Entry
                   </button>
                 </div>
 
                 {showAwarenessForm && (
                   <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <h3 className="text-lg font-semibold mb-4">
-                      {editingAwarenessId ? 'Edit Awareness Entry' : 'Add New Awareness Entry'}
-                    </h3>
+                    <h3 className="text-lg font-semibold mb-4">{editingAwarenessId ? 'Edit Entry' : 'Add Entry'}</h3>
                     <form onSubmit={handleAwarenessSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                        <input
-                          type="text"
-                          value={newAwareness.month}
-                          onChange={(e) => setNewAwareness({ ...newAwareness, month: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
-                        <input
-                          type="text"
-                          value={newAwareness.theme}
-                          onChange={(e) => setNewAwareness({ ...newAwareness, theme: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
-                          required />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                          <input
+                            type="text"
+                            value={awarenessForm.month}
+                            onChange={(e) => setAwarenessForm({ ...awarenessForm, month: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
+                          <input
+                            type="text"
+                            value={awarenessForm.theme}
+                            onChange={(e) => setAwarenessForm({ ...awarenessForm, theme: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                            required
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
                         <textarea
-                          value={newAwareness.message}
-                          onChange={(e) => setNewAwareness({ ...newAwareness, message: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          value={awarenessForm.message}
+                          onChange={(e) => setAwarenessForm({ ...awarenessForm, message: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
                           rows={3}
-                          required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Resource URL (optional)</label>
-                        <input
-                          type="url"
-                          value={newAwareness.resource_url}
-                          onChange={(e) => setNewAwareness({ ...newAwareness, resource_url: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
-                        <select
-                          value={newAwareness.icon}
-                          onChange={(e) => setNewAwareness({ ...newAwareness, icon: e.target.value as any })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
                           required
-                        >
-                          <option value="sun">Sun</option>
-                          <option value="heart">Heart</option>
-                          <option value="star">Star</option>
-                          <option value="leaf">Leaf</option>
-                          <option value="moon">Moon</option>
-                        </select>
+                        />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image (optional)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image</label>
                         <input
                           type="file"
-                          onChange={(e) => setMonthlyAwarenessImageFile(e.target.files ? e.target.files[0] : null)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                          onChange={(e) => setAwarenessImageFile(e.target.files ? e.target.files[0] : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
                           accept="image/*"
                         />
-                        {monthlyAwarenessImageFile && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500">Selected file: {monthlyAwarenessImageFile.name}</p>
-                            <img src={URL.createObjectURL(monthlyAwarenessImageFile)} alt="Banner Thumbnail" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                          </div>
-                        )}
-                        {newAwareness.banner_url && !monthlyAwarenessImageFile && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500">Current banner:</p>
-                            <img src={newAwareness.banner_url} alt="Current Banner" className="mt-2 h-20 w-20 object-cover rounded-md" />
-                          </div>
-                        )}
-                        {uploadingMonthlyAwarenessImage && <p className="text-su-blue text-sm mt-2">Uploading banner...</p>}
-                        {uploadMonthlyAwarenessImageError && <p className="text-red-500 text-sm mt-2">{uploadMonthlyAwarenessImageError}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Caption (optional)</label>
-                        <input
-                          type="text"
-                          value={newAwareness.caption}
-                          onChange={(e) => setNewAwareness({ ...newAwareness, caption: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900" />
+                        {uploadingAwarenessImage && <p className="text-su-blue text-sm mt-2">Uploading...</p>}
                       </div>
                       <div className="flex space-x-2">
                         <button
                           type="submit"
-                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                          disabled={uploadingAwarenessImage}
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {editingAwarenessId ? 'Update Awareness Entry' : 'Add Awareness Entry'}
+                          {editingAwarenessId ? 'Update' : 'Add'}
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setShowAwarenessForm(false);
-                            setEditingAwarenessId(null);
-                          } }
-                          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                          onClick={() => setShowAwarenessForm(false)}
+                          className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
                         >
                           Cancel
                         </button>
@@ -1859,38 +1579,31 @@ setShowCouncilLeaderForm(false);
                   </div>
                 )}
 
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Theme</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {awarenessEntries.map((entry) => (
-                        <tr key={entry.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.month}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{entry.theme}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => editAwareness(entry)}
-                              className="text-su-blue hover:text-blue-700 mr-4"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => deleteAwareness(entry.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-4">
+                  {awarenessEntries.map(entry => (
+                    <div key={entry.id} className="bg-white rounded-lg shadow-md p-6">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">{entry.month} - {entry.theme}</h3>
+                          <p className="text-gray-600 mt-2">{entry.message}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => editAwareness(entry)}
+                            className="text-su-blue hover:text-blue-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteAwareness(entry.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

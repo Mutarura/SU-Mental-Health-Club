@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Resource } from '../../types/database.types';
-import { BookIcon, DocumentIcon } from '../../components/icons';
+import { BookIcon, DocumentIcon, SoundIcon, LightbulbIcon } from '../../components/icons';
 
 const DEFAULT_RESOURCES: Resource[] = [
   {
@@ -76,11 +76,13 @@ const DEFAULT_RESOURCES: Resource[] = [
 const getCategoryIcon = (category: string) => {
   const lowerCategory = category.toLowerCase();
   if (lowerCategory.includes('article') || lowerCategory.includes('blog')) {
-    return <DocumentIcon className="w-4 h-4 text-white" />;
+    return <DocumentIcon className="w-6 h-6 text-su-blue" />;
   } else if (lowerCategory.includes('guide') || lowerCategory.includes('help')) {
-    return <DocumentIcon className="w-4 h-4 text-white" />;
+    return <BookIcon className="w-6 h-6 text-green-600" />;
+  } else if (lowerCategory.includes('podcast')) {
+    return <SoundIcon className="w-6 h-6 text-purple-600" />;
   } else {
-    return <BookIcon className="w-4 h-4 text-white" />;
+    return <LightbulbIcon className="w-6 h-6 text-yellow-600" />;
   }
 };
 
@@ -110,19 +112,24 @@ export default function ResourcesPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('resources')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('resources')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching resources:', error);
+        if (error) {
+          console.warn('Database error (using fallback data):', error.message);
+          setResources(DEFAULT_RESOURCES);
+        } else {
+          setResources(data && data.length > 0 ? data : DEFAULT_RESOURCES);
+        }
+      } catch (dbError) {
+        console.warn('Database connection error (using fallback data):', dbError);
         setResources(DEFAULT_RESOURCES);
-      } else {
-        setResources(data && data.length > 0 ? data : DEFAULT_RESOURCES);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.warn('Error fetching resources:', error);
       setResources(DEFAULT_RESOURCES);
     } finally {
       setLoading(false);
@@ -194,7 +201,8 @@ export default function ResourcesPage() {
               className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'articles' ? 'text-su-blue' : 'text-gray-800 hover:text-su-blue'}`}
             >
               <span className="inline-flex items-center gap-2">
-                Articles & Guides
+                <DocumentIcon className="w-5 h-5" />
+                📖 Articles & Guides
                 <span className={`${activeTab === 'articles' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'} inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5`}>{articlesAndGuides.length}</span>
               </span>
               {activeTab === 'articles' && (
@@ -209,7 +217,8 @@ export default function ResourcesPage() {
               className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'podcasts' ? 'text-su-blue' : 'text-gray-800 hover:text-su-blue'}`}
             >
               <span className="inline-flex items-center gap-2">
-                Podcasts
+                <SoundIcon className="w-5 h-5" />
+                🎧 Podcasts
                 <span className={`${activeTab === 'podcasts' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'} inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5`}>{podcasts.length}</span>
               </span>
               {activeTab === 'podcasts' && (
@@ -224,6 +233,7 @@ export default function ResourcesPage() {
               className={`relative -mb-px px-1 pb-3 pt-2 text-base font-semibold focus:outline-none ${activeTab === 'tools' ? 'text-su-blue' : 'text-gray-800 hover:text-su-blue'}`}
             >
               <span className="inline-flex items-center gap-2">
+                <span className="text-lg">🛠️</span>
                 Wellness Tools
                 <span className={`${activeTab === 'tools' ? 'bg-blue-50 text-su-blue' : 'bg-gray-100 text-gray-700'} inline-flex items-center justify-center text-xs font-semibold rounded-full px-2 py-0.5`}>{tools.length}</span>
               </span>
@@ -249,9 +259,19 @@ export default function ResourcesPage() {
                 <div className="p-6">
                   {/* Icon pill */}
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mr-3">
-                      {getCategoryIcon(resource.category)}
-                    </div>
+                    {(() => {
+                      const cat = (resource.category || '').toLowerCase();
+                      let bgColor = 'bg-blue-50';
+                      if (cat.includes('article')) bgColor = 'bg-blue-50';
+                      else if (cat.includes('guide')) bgColor = 'bg-green-50';
+                      else if (cat.includes('podcast')) bgColor = 'bg-purple-50';
+                      else bgColor = 'bg-yellow-50';
+                      return (
+                        <div className={`w-14 h-14 rounded-xl ${bgColor} flex items-center justify-center`}>
+                          {getCategoryIcon(resource.category)}
+                        </div>
+                      );
+                    })()}
                   </div>
                   {/* Category bar */}
                   <div className={`relative w-full h-5 ${barBg} rounded-full mb-4`}>

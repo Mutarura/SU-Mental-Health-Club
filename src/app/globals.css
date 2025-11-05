@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   /* Strathmore Brand Colors */
@@ -6,27 +8,16 @@
   --su-red: #E03C31;     /* Strathmore Red - Pantone 179 C */
   --su-gold: #EED484;    /* Strathmore Gold - Pantone 7403 C */
   --su-black: #2D2926;   /* Strathmore Black - Pantone Black C */
-  
+
   /* System Colors */
   --background: #ffffff;
   --foreground: var(--su-black);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--su-blue);
-  --color-secondary: var(--su-red);
-  --color-accent: var(--su-gold);
-  --color-neutral: var(--su-black);
-  --font-sans: "Gill Sans", "Inter", "system-ui", sans-serif;
-  --font-mono: var(--font-geist-mono);
-}
-
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: var(--su-black);
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: var(--su-black);
   }
 }
 
