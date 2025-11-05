@@ -90,11 +90,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/peer-support" className="text-sm hover:text-su-gold transition-colors flex items-center">
-                  🤝 Peer Support
-                </Link>
-              </li>
-              <li>
                 <Link href="/about" className="text-sm hover:text-su-gold transition-colors flex items-center">
                   ℹ️ About Us
                 </Link>
