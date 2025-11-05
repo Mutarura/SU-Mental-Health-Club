@@ -259,9 +259,19 @@ export default function ResourcesPage() {
                 <div className="p-6">
                   {/* Icon pill */}
                   <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mr-3">
-                      {getCategoryIcon(resource.category)}
-                    </div>
+                    {(() => {
+                      const cat = (resource.category || '').toLowerCase();
+                      let bgColor = 'bg-blue-50';
+                      if (cat.includes('article')) bgColor = 'bg-blue-50';
+                      else if (cat.includes('guide')) bgColor = 'bg-green-50';
+                      else if (cat.includes('podcast')) bgColor = 'bg-purple-50';
+                      else bgColor = 'bg-yellow-50';
+                      return (
+                        <div className={`w-14 h-14 rounded-xl ${bgColor} flex items-center justify-center`}>
+                          {getCategoryIcon(resource.category)}
+                        </div>
+                      );
+                    })()}
                   </div>
                   {/* Category bar */}
                   <div className={`relative w-full h-5 ${barBg} rounded-full mb-4`}>
