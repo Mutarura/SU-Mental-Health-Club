@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Resource } from '../../types/database.types';
-import { BookIcon, DocumentIcon } from '../../components/icons';
+import { BookIcon, DocumentIcon, SoundIcon } from '../../components/icons';
 
 const DEFAULT_RESOURCES: Resource[] = [
   {
