@@ -108,70 +108,38 @@ export default function GalleryDetailPage() {
 
   const fetchGalleryData = async () => {
     try {
-      if (!supabase) {
-        // Use sample data
-        const sample = SAMPLE_GALLERY_EVENTS[slug];
-        if (sample) {
-          setGalleryEvent(sample.event);
-          setGalleryImages(sample.images);
-        } else {
-          // Gallery event not found
-          setGalleryEvent(null);
-          setGalleryImages([]);
-        }
+      const { data: eventData, error: eventError } = await supabase
+        .from('gallery_events')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+  
+      if (eventError || !eventData) {
+        console.warn('Error fetching gallery event:', eventError?.message);
+        setGalleryEvent(null);
+        setGalleryImages([]);
         setLoading(false);
         return;
       }
-
-      try {
-        // Fetch gallery event
-        const { data: eventData, error: eventError } = await supabase
-          .from('gallery_events')
-          .select('*')
-          .eq('slug', slug)
-          .single();
-
-        if (eventError || !eventData) {
-          console.warn('Error fetching gallery event (using fallback):', eventError?.message);
-          const sample = SAMPLE_GALLERY_EVENTS[slug];
-          if (sample) {
-            setGalleryEvent(sample.event);
-            setGalleryImages(sample.images);
-          } else {
-            setGalleryEvent(null);
-            setGalleryImages([]);
-          }
-          setLoading(false);
-          return;
-        }
-
-        setGalleryEvent(eventData);
-
-        // Fetch images for this gallery event
-        const { data: imagesData, error: imagesError } = await supabase
-          .from('gallery_images')
-          .select('*')
-          .eq('gallery_event_id', eventData.id)
-          .order('display_order', { ascending: true });
-
-        if (!imagesError && imagesData) {
-          setGalleryImages(imagesData);
-        }
-      } catch (dbError) {
-        console.warn('Database connection error (using fallback):', dbError);
-        const sample = SAMPLE_GALLERY_EVENTS[slug];
-        if (sample) {
-          setGalleryEvent(sample.event);
-          setGalleryImages(sample.images);
-        }
+  
+      setGalleryEvent(eventData);
+  
+      const { data: imagesData, error: imagesError } = await supabase
+        .from('gallery_images')
+        .select('*')
+        .eq('gallery_event_id', eventData.id)
+        .order('display_order', { ascending: true });
+  
+      if (imagesError) {
+        console.warn('Error fetching gallery images:', imagesError.message);
+        setGalleryImages([]);
+      } else {
+        setGalleryImages(imagesData || []);
       }
-    } catch (error) {
-      console.warn('Error fetching gallery data:', error);
-      const sample = SAMPLE_GALLERY_EVENTS[slug];
-      if (sample) {
-        setGalleryEvent(sample.event);
-        setGalleryImages(sample.images);
-      }
+    } catch (dbError) {
+      console.warn('Database connection error:', dbError);
+      setGalleryEvent(null);
+      setGalleryImages([]);
     } finally {
       setLoading(false);
     }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import type { Event } from '../../types/database.types';
 import { CalendarIcon, LocationIcon, ClockIcon } from '../../components/icons';
+import { error } from 'console';
 
 const DEFAULT_EVENTS: Event[] = [
   {
@@ -65,29 +66,24 @@ export default function EventsPreview() {
   }, []);
 
   const fetchEvents = async () => {
+    setLoading(true);
     try {
       if (!supabase) {
         setEvents(DEFAULT_EVENTS);
-        setLoading(false);
         return;
       }
 
-      try {
-        const { data, error } = await supabase
-          .from('events')
-          .select('*')
-          .order('start', { ascending: true })
-          .limit(3);
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('start', { ascending: true })
+        .limit(3);
 
-        if (error) {
-          console.warn('Database error (using fallback data):', error.message);
-          setEvents(DEFAULT_EVENTS);
-        } else {
-          setEvents(data && data.length > 0 ? data : DEFAULT_EVENTS);
-        }
-      } catch (dbError) {
-        console.warn('Database connection error (using fallback data):', dbError);
+      if (error) {
+        console.warn('Database error (using fallback data):', error.message);
         setEvents(DEFAULT_EVENTS);
+      } else {
+        setEvents(data && data.length > 0 ? data : DEFAULT_EVENTS);
       }
     } catch (error) {
       console.warn('Error fetching events:', error);

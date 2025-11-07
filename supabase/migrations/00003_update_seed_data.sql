@@ -39,4 +39,4 @@ WHERE id = (SELECT id FROM footer LIMIT 1);
 -- Insert additional admin users (replace with actual admin emails)
 INSERT INTO admins (email, role) VALUES
 ('mentalhealth.admin@strathmore.edu', 'admin'),
-('student.affairs@strathmore.edu', 'admin');
+('ronald.mutarura@strathmore.edu', 'admin');

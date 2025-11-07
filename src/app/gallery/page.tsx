@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
-import type { GalleryEvent } from '../../types/database.types';
+import type { GalleryEvent, GalleryImage } from '../../types/database.types';
 
 const DEFAULT_GALLERY_EVENTS: GalleryEvent[] = [
   {
@@ -35,6 +35,7 @@ const DEFAULT_GALLERY_EVENTS: GalleryEvent[] = [
 
 export default function GalleryPage() {
   const [galleryEvents, setGalleryEvents] = useState<GalleryEvent[]>([]);
+  const [galleryByEvent, setGalleryByEvent] = useState<Record<string, GalleryImage[]>>({});
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
@@ -44,6 +45,7 @@ export default function GalleryPage() {
     if (supabase) {
       const channel = supabase.channel('gallery-events-realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery_events' }, fetchGalleryEvents)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery_images' }, fetchGalleryEvents)
         .subscribe();
       return () => {
         channel.unsubscribe();
@@ -60,27 +62,63 @@ export default function GalleryPage() {
       }
 
       try {
+        // Nested select requires FK for PostgREST; falls back to manual grouping if unavailable
         const { data, error } = await supabase
           .from('gallery_events')
-          .select('*')
+          .select('id,title,slug,short_description,cover_image,created_at, gallery_images(id,image_url,caption,display_order,created_at)')
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.warn('Database error (using fallback data):', error.message);
-          setGalleryEvents(DEFAULT_GALLERY_EVENTS);
+          console.warn('Database error:', error.message);
+          setGalleryEvents([]);
+          setGalleryByEvent({});
         } else {
-          setGalleryEvents(data && data.length > 0 ? data : DEFAULT_GALLERY_EVENTS);
+          setGalleryEvents((data || []).map(e => ({
+            id: e.id,
+            title: e.title,
+            slug: e.slug,
+            short_description: e.short_description,
+            cover_image: e.cover_image,
+            created_at: e.created_at,
+          })));
+          const grouped: Record<string, GalleryImage[]> = {};
+          (data || []).forEach(e => {
+            grouped[e.id] = (e.gallery_images || [])
+              .map((img: any) => ({
+                id: img.id,
+                gallery_event_id: e.id,
+                image_url: img.image_url,
+                caption: img.caption,
+                display_order: img.display_order,
+                created_at: img.created_at,
+              }))
+              .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+          });
+          setGalleryByEvent(grouped);
         }
       } catch (dbError) {
-        console.warn('Database connection error (using fallback data):', dbError);
-        setGalleryEvents(DEFAULT_GALLERY_EVENTS);
+        console.warn('Database connection error:', dbError);
+        setGalleryEvents([]);
+        setGalleryByEvent({});
+      } finally {
+        setLoading(false);
       }
     } catch (error) {
-      console.warn('Error fetching gallery events:', error);
-      setGalleryEvents(DEFAULT_GALLERY_EVENTS);
-    } finally {
-      setLoading(false);
-    }
+    console.error("Error fetching images:", error);
+  }
+    
+    // Render images grouped by event_title (event) with grids per event
+    return ( 
+      <div className="py-12 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="animate-pulse bg-gray-200 rounded-lg h-96"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const handleImageError = (eventId: string) => {
@@ -157,3 +195,4 @@ export default function GalleryPage() {
     </div>
   );
 }
+
