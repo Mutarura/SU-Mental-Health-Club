@@ -25,7 +25,7 @@ interface AdminStats {
   totalGalleryEvents: number;
 }
 
-type AdminTab = 'dashboard' | 'gallery' | 'events' | 'resources' | 'council' | 'awareness';
+type AdminTab = 'dashboard' | 'gallery' | 'events' | 'resources' | 'council' | 'awareness' | 'quotes';
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -39,6 +39,12 @@ export default function AdminPage() {
   const [authLoading, setAuthLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+
+  // Quotes states
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [showQuoteForm, setShowQuoteForm] = useState(false);
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const [quoteForm, setQuoteForm] = useState({ author: '', text: '' });
 
   // Helper: check admin email via `admins` table to align with RLS
   const checkIsAdmin = async (email: string | null | undefined): Promise<boolean> => {
@@ -192,6 +198,7 @@ export default function AdminPage() {
     fetchResources();
     fetchCouncilLeaders();
     fetchAwareness();
+    fetchQuotes();
 
     const channels = [
       supabase?.channel('gallery-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'gallery_events' }, fetchGalleryData),
@@ -199,6 +206,7 @@ export default function AdminPage() {
       supabase?.channel('resources-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, fetchResources),
       supabase?.channel('council-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'council_leaders' }, fetchCouncilLeaders),
       supabase?.channel('awareness-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'monthly_awareness' }, fetchAwareness),
+      supabase?.channel('quotes-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'quotes' }, () => { fetchQuotes(); fetchStats(); }), // add
     ];
 
     channels.forEach(ch => ch?.subscribe());
@@ -212,20 +220,22 @@ export default function AdminPage() {
   const fetchStats = async () => {
     if (!supabase) return;
     try {
-      const [events, resources, awareness, gallery] = await Promise.all([
+      const [eventsCount, resourcesCount, awarenessCount, galleryCount, quotesCount, councilCount] = await Promise.all([
         supabase.from('events').select('id', { count: 'exact' }),
         supabase.from('resources').select('id', { count: 'exact' }),
         supabase.from('monthly_awareness').select('id', { count: 'exact' }),
         supabase.from('gallery_events').select('id', { count: 'exact' }),
+        supabase.from('quotes').select('id', { count: 'exact' }),
+        supabase.from('council_leaders').select('id', { count: 'exact' }),
       ]);
 
       setStats({
-        totalEvents: events.count || 0,
-        totalResources: resources.count || 0,
-        totalAwareness: awareness.count || 0,
-        totalQuotes: 0,
-        totalCouncilLeaders: 0,
-        totalGalleryEvents: gallery.count || 0,
+        totalEvents: eventsCount.count || 0,
+        totalResources: resourcesCount.count || 0,
+        totalAwareness: awarenessCount.count || 0,
+        totalQuotes: quotesCount.count || 0,
+        totalCouncilLeaders: councilCount.count || 0,
+        totalGalleryEvents: galleryCount.count || 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -266,6 +276,15 @@ export default function AdminPage() {
     if (!supabase) return;
     const { data } = await supabase.from('monthly_awareness').select('*').order('created_at', { ascending: true });
     if (data) setAwarenessEntries(data || DEFAULT_AWARENESS);
+  };
+
+  const fetchQuotes = async () => {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from('quotes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setQuotes(data);
   };
 
   // GALLERY CRUD
@@ -678,6 +697,57 @@ export default function AdminPage() {
     setShowAwarenessForm(true);
   };
 
+  // QUOTES CRUD
+  const handleQuoteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+
+    try {
+      const payload = {
+        text: quoteForm.text,
+        author: quoteForm.author,
+      };
+
+      if (editingQuoteId) {
+        await supabase.from('quotes').update(payload).eq('id', editingQuoteId);
+        setMessage('Quote updated successfully!');
+      } else {
+        await supabase.from('quotes').insert([payload]);
+        setMessage('Quote added successfully!');
+      }
+
+      setShowQuoteForm(false);
+      setEditingQuoteId(null);
+      setQuoteForm({ text: '', author: '' });
+      fetchQuotes();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    }
+  };
+
+  const editQuote = (quote: Quote) => {
+    setEditingQuoteId(quote.id);
+    setQuoteForm({
+      text: quote.text,
+      author: quote.author || '',
+    });
+    setShowQuoteForm(true);
+  };
+
+  const deleteQuote = async (id: string) => {
+    if (!supabase) return;
+    if (!confirm('Delete this quote?')) return;
+    try {
+      await supabase.from('quotes').delete().eq('id', id);
+      setMessage('Quote deleted successfully!');
+      fetchQuotes();
+      fetchStats();
+    } catch (error: any) {
+      setMessage(`Error: ${error.message}`);
+    }
+  };
+
   // AUTH
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -869,6 +939,7 @@ export default function AdminPage() {
                 { id: 'resources' as const, label: '📚 Resource Manager', icon: BookIcon },
                 { id: 'council' as const, label: '🧑‍🤝‍🧑 Council Management', icon: PeopleIcon },
                 { id: 'awareness' as const, label: 'Monthly Awareness', icon: SunIcon },
+                { id: 'quotes' as const, label: '📝 Quotes Manager', icon: ChatIcon },
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -921,6 +992,15 @@ export default function AdminPage() {
                       <div className="ml-4">
                         <p className="text-sm font-medium text-gray-600">Gallery Events</p>
                         <p className="text-2xl font-bold text-gray-900">{stats.totalGalleryEvents}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-purple-100 text-purple-600"><PeopleIcon className="w-6 h-6" /></div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Council Leaders</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalCouncilLeaders}</p>
                       </div>
                     </div>
                   </div>
@@ -1625,6 +1705,94 @@ export default function AdminPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'quotes' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">📝 Quotes Manager</h2>
+                  <button
+                    onClick={() => {
+                      setShowQuoteForm(true);
+                      setEditingQuoteId(null);
+                      setQuoteForm({ text: '', author: '' });
+                    }}
+                    className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  >
+                    Add Quote
+                  </button>
+                </div>
+
+                {showQuoteForm && (
+                  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h3 className="text-lg font-semibold mb-4">{editingQuoteId ? 'Edit Quote' : 'Add Quote'}</h3>
+                    <form onSubmit={handleQuoteSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Quote Text</label>
+                        <textarea
+                          value={quoteForm.text}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, text: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                          rows={3}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
+                        <input
+                          type="text"
+                          value={quoteForm.author}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, author: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          type="submit"
+                          className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                        >
+                          {editingQuoteId ? 'Update' : 'Add'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowQuoteForm(false)}
+                          className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-lg font-semibold mb-4">All Quotes</h3>
+                  <ul className="space-y-3">
+                    {quotes.map(q => (
+                      <li key={q.id} className="flex items-start justify-between">
+                        <div>
+                          <p className="text-gray-900 font-medium">{q.author || 'Unknown'}</p>
+                          <p className="text-gray-700">{q.text}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => editQuote(q)}
+                            className="text-sm bg-blue-50 text-su-blue px-3 py-1 rounded-md hover:bg-blue-100"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteQuote(q.id)}
+                            className="text-sm bg-red-50 text-red-600 px-3 py-1 rounded-md hover:bg-red-100"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             )}
