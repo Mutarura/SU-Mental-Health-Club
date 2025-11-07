@@ -270,7 +270,7 @@ export default function AboutPage() {
               <BalanceIcon className="w-8 h-8 text-su-gold" />
             </div>
             <h1 className="text-3xl font-bold text-su-blue">
-              Strathmore Mental Health Club
+              About Us
             </h1>
           </div>
           <div className="w-24 h-1 bg-su-red mx-auto mb-8"></div>

@@ -40,6 +40,21 @@ export default function AdminPage() {
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
 
+  // Helper: check admin email via `admins` table to align with RLS
+  const checkIsAdmin = async (email: string | null | undefined): Promise<boolean> => {
+    if (!email || !supabase) return false;
+    const { data, error } = await supabase
+      .from('admins')
+      .select('email')
+      .eq('email', email)
+      .limit(1);
+    if (error) {
+      console.error('Admin check failed:', error);
+      return false;
+    }
+    return !!data && data.length > 0;
+  };
+
   const [stats, setStats] = useState<AdminStats>({
     totalEvents: 0,
     totalResources: 0,
@@ -136,17 +151,22 @@ export default function AdminPage() {
       return;
     }
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // Initial user fetch with admins table check
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user || null);
-      setIsAdmin(Boolean(user?.user_metadata?.role === 'admin'));
+      const admin = await checkIsAdmin(user?.email ?? null);
+      setIsAdmin(admin);
       setLoading(false);
     });
 
+    // Auth state changes with admins table check
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
       setUser(u);
-      setIsAdmin(Boolean(u?.user_metadata?.role === 'admin'));
-      setLoading(false);
+      checkIsAdmin(u?.email ?? null).then((admin) => {
+        setIsAdmin(admin);
+        setLoading(false);
+      });
     });
 
     return () => {
@@ -694,10 +714,10 @@ export default function AdminPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: fullName, role: 'admin' } }
+        options: { data: { full_name: fullName } }
       });
       if (error) setMessage(error.message);
-      else setMessage('Check your email for confirmation!');
+      else setMessage('Check your email for confirmation. Admin access is granted once your email is whitelisted in the admins table.');
     } catch (error) {
       setMessage('Sign up failed');
     } finally {
@@ -813,7 +833,8 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md w-full space-y-6 text-center">
           <h2 className="text-2xl font-bold text-gray-900">Access Restricted</h2>
-          <p className="text-gray-600">This dashboard is for admin users only.</p>
+          <p className="text-gray-600">Signed in as <span className="font-medium">{user?.email}</span>.</p>
+          <p className="text-gray-600">Your email is not on the admin list. Ask a site admin to add your email to the <span className="font-medium">public.admins</span> table.</p>
           <button
             onClick={handleSignOut}
             className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"

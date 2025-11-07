@@ -4,9 +4,6 @@
 DELETE FROM events;
 DELETE FROM resources;
 DELETE FROM quotes;
-DELETE FROM about;
-DELETE FROM footer;
-DELETE FROM admins;
 
 -- Insert comprehensive test data for Events
 INSERT INTO events (title, slug, description, start, "end", location, calendar_link, image_url) VALUES
@@ -35,20 +32,3 @@ INSERT INTO quotes (text, author) VALUES
 ('The strongest people are not those who show strength in front of us, but those who win battles we know nothing about.', 'Anonymous'),
 ('Mental health needs a great deal of attention. It''s the final taboo and it needs to be faced and dealt with.', 'Adam Ant'),
 ('You don''t have to be positive all the time. It''s perfectly okay to feel sad, angry, annoyed, frustrated, scared, or anxious. Having feelings doesn''t make you a negative person.', 'Lori Deschene');
-
--- Insert comprehensive test data for About
-INSERT INTO about (mission_text, story_text, collaboration_note, image_url) VALUES
-('Our mission is to create a supportive, inclusive environment where every Strathmore University student feels valued, heard, and empowered to prioritize their mental health. We believe that mental wellness is fundamental to academic success and personal growth.',
-'Founded in 2020 by a group of passionate students who recognized the need for peer-to-peer mental health support on campus, the Strathmore Mental Health Club has grown into a vibrant community of advocates, supporters, and change-makers. We started with simple peer support circles and have expanded to offer workshops, awareness campaigns, and resource sharing that reaches hundreds of students each semester.',
-'We work closely with the Strathmore University Medical Centre, Student Affairs Office, and various mental health organizations in Kenya to ensure our students have access to comprehensive support services. Our partnerships enable us to provide both peer support and professional referrals when needed.',
-'/images/about/mission.jpg');
-
--- Insert comprehensive test data for Footer
-INSERT INTO footer (med_centre_contact, club_email, emergency_numbers) VALUES
-('+254 703 034 000', 'mentalhealth@strathmore.edu', 'Kenya Red Cross: 1199 | Befrienders Kenya: +254 722 178 177 | Suicide Prevention: +254 722 178 177');
-
--- Insert admin users (restricted to official Strathmore emails)
-INSERT INTO admins (email, role) VALUES
-('admin@strathmore.edu', 'super_admin'),
-('mentalhealth@strathmore.edu', 'admin'),
-('studentaffairs@strathmore.edu', 'admin');
