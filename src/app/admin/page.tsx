@@ -1746,8 +1746,9 @@ export default function AdminPage() {
                           className="w-full h-48 object-cover rounded-md mb-4"
                         />
                       )}
+                      <h3 className="text-lg font-semibold text-gray-900">{leader.name}</h3>
                       <p className="text-sm text-su-blue font-medium">{leader.role}</p>
-                      {leader.year && <p className="text-sm text-gray-600">{leader.year}</p>}
+                      {leader.year && <p className="text-sm text-gray-600">Year {leader.year}</p>}
                       <div className="flex space-x-2 mt-4">
                         <button
                           onClick={() => editCouncilMember(leader)}

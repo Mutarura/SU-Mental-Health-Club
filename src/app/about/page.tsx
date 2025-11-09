@@ -487,14 +487,14 @@ export default function AboutPage() {
                         )}
                       </div>
 
-                      {/* Role only */}
-                      <div className="text-center mb-3">
+                      <div className="flex flex-col items-center">
+                        {leader?.name && <h3 className="text-lg font-semibold text-gray-900">{leader.name}</h3>}
                         <div className="mt-1">{roleBadge(role)}</div>
                       </div>
 
                       {/* Year only */}
                       <div className="text-sm text-gray-700 text-center">
-                        {leader?.year && <p className="text-gray-500">{leader.year}</p>}
+                        {leader?.year && <p className="text-gray-500">Year {leader.year}</p>}
                       </div>
 
                       {/* Removed name, bio, and social links */}
