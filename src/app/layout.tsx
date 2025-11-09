@@ -22,6 +22,9 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/strathmore-logo.png" />
+      </head>
       <body className={`${inter.variable} antialiased min-h-screen flex flex-col`}>
         <Navbar />
         <main className="flex-grow">
