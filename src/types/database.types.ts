@@ -59,5 +59,6 @@ export type GalleryImage = {
   image_url: string;
   caption?: string;
   display_order: number;
+  media_type?: 'image' | 'video';
   created_at?: string;
 };

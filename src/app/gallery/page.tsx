@@ -182,6 +182,16 @@ export default function GalleryPage() {
                   <div className="p-6">
                     <h3 className="text-xl font-bold text-su-blue mb-3 line-clamp-2">{event.title}</h3>
                     <p className="text-gray-600 text-sm line-clamp-3 mb-4">{event.short_description}</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm text-gray-500">
+                        {galleryByEvent[event.id]?.length || 0} media items
+                      </span>
+                      {galleryByEvent[event.id]?.some(img => img.media_type === 'video') && (
+                        <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                          📹 Contains videos
+                        </span>
+                      )}
+                    </div>
                     <div className="inline-block px-4 py-2 bg-su-blue text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
                       View Gallery
                     </div>

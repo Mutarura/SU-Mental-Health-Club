@@ -81,7 +81,12 @@ export default function AdminPage() {
   const [uploadGalleryImageError, setUploadGalleryImageError] = useState<string | null>(null);
   const [showGalleryImageUpload, setShowGalleryImageUpload] = useState<string | null>(null);
   const [galleryImageForm, setGalleryImageForm] = useState({ caption: '' });
-  const [galleryImageFile2, setGalleryImageFile2] = useState<File | null>(null);
+
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryVideoFile, setGalleryVideoFile] = useState<File | null>(null);
+  const [galleryImagePreviews, setGalleryImagePreviews] = useState<string[]>([]);
+  const [galleryVideoPreview, setGalleryVideoPreview] = useState<string>('');
+  const [galleryUploadError, setGalleryUploadError] = useState<string>('');
 
   // Event states
   const [events, setEvents] = useState<Event[]>([]);
@@ -352,26 +357,53 @@ export default function AdminPage() {
 
   const handleAddGalleryImage = async (e: React.FormEvent, galleryEventId: string) => {
     e.preventDefault();
-    if (!supabase || !galleryImageFile2) return;
+    if (!supabase || (galleryFiles.length === 0 && !galleryVideoFile)) return;
 
     try {
-      const publicUrl = await uploadImageToStorage(galleryImageFile2, 'gallery');
-      const maxOrder = galleryImages.filter(img => img.gallery_event_id === galleryEventId).length;
+      setUploadingGalleryImage(true);
+      let currentDisplayOrder = galleryImages.filter(img => img.gallery_event_id === galleryEventId).length;
       
-      await supabase.from('gallery_images').insert([{
-        gallery_event_id: galleryEventId,
-        image_url: publicUrl,
-        caption: galleryImageForm.caption || null,
-        display_order: maxOrder + 1,
-      }]);
+      // Upload multiple images
+      if (galleryFiles.length > 0) {
+        for (let i = 0; i < galleryFiles.length; i++) {
+          const file = galleryFiles[i];
+          const publicUrl = await uploadImageToStorage(file, 'gallery/images');
+          if (!publicUrl) throw new Error(`Image ${i + 1} upload failed`);
 
-      setMessage('Image added successfully!');
+          await supabase.from('gallery_images').insert([{
+            gallery_event_id: galleryEventId,
+            image_url: publicUrl,
+            caption: galleryImageForm.caption || null,
+            display_order: currentDisplayOrder + i + 1,
+            media_type: 'image',
+          }]);
+        }
+        currentDisplayOrder += galleryFiles.length;
+      }
+
+      // Upload video if present
+      if (galleryVideoFile) {
+        const publicUrl = await uploadImageToStorage(galleryVideoFile, 'gallery/videos');
+        if (!publicUrl) throw new Error('Video upload failed');
+
+        await supabase.from('gallery_images').insert([{
+          gallery_event_id: galleryEventId,
+          image_url: publicUrl,
+          caption: galleryImageForm.caption || null,
+          display_order: currentDisplayOrder + 1,
+          media_type: 'video',
+        }]);
+      }
+
+      setMessage('Gallery media added successfully!');
       setShowGalleryImageUpload(null);
       setGalleryImageForm({ caption: '' });
-      setGalleryImageFile2(null);
+      clearGalleryFiles();
       fetchGalleryData();
     } catch (error: any) {
       setMessage(`Error: ${error.message}`);
+    } finally {
+      setUploadingGalleryImage(false);
     }
   };
 
@@ -385,6 +417,85 @@ export default function AdminPage() {
     } catch (error: any) {
       setMessage(`Error: ${error.message}`);
     }
+  };
+
+  // Gallery file validation and handling
+  const MAX_IMAGE_FILES = 5;
+  const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB in bytes
+
+  const validateGalleryFiles = (files: FileList): { images: File[], video: File | null, error: string } => {
+    const images: File[] = [];
+    let video: File | null = null;
+    let error = '';
+
+    Array.from(files).forEach(file => {
+      if (file.type.startsWith('image/')) {
+        images.push(file);
+      } else if (file.type.startsWith('video/')) {
+        if (video) {
+          error = 'Only one video file is allowed per event.';
+        } else if (file.size > MAX_VIDEO_SIZE) {
+          error = `Video file must be smaller than 20MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`;
+        } else {
+          video = file;
+        }
+      }
+    });
+
+    if (images.length > MAX_IMAGE_FILES) {
+      error = `Maximum ${MAX_IMAGE_FILES} images allowed. You selected ${images.length} images.`;
+    }
+
+    return { images, video, error };
+  };
+
+  const handleGalleryFilesChange = (files: FileList | null) => {
+    if (!files) return;
+    
+    const { images, video, error } = validateGalleryFiles(files);
+    
+    if (error) {
+      setGalleryUploadError(error);
+      return;
+    }
+    
+    setGalleryUploadError('');
+    setGalleryFiles(images);
+    setGalleryVideoFile(video);
+    
+    // Create previews
+    const imagePreviews: string[] = [];
+    images.forEach(image => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          imagePreviews.push(e.target.result as string);
+          if (imagePreviews.length === images.length) {
+            setGalleryImagePreviews(imagePreviews);
+          }
+        }
+      };
+      reader.readAsDataURL(image);
+    });
+    
+    // Create video preview
+    if (video) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setGalleryVideoPreview(e.target.result as string);
+        }
+      };
+      reader.readAsDataURL(video);
+    }
+  };
+
+  const clearGalleryFiles = () => {
+    setGalleryFiles([]);
+    setGalleryVideoFile(null);
+    setGalleryImagePreviews([]);
+    setGalleryVideoPreview('');
+    setGalleryUploadError('');
   };
 
   // EVENT CRUD
@@ -1118,23 +1229,39 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Images for this gallery event */}
+                      {/* Images and Videos for this gallery event */}
                       <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-3">Images ({galleryImages.filter(img => img.gallery_event_id === event.id).length})</h4>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                          Media ({galleryImages.filter(img => img.gallery_event_id === event.id).length})
+                        </h4>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
                           {galleryImages.filter(img => img.gallery_event_id === event.id).map(image => (
                             <div key={image.id} className="relative">
-                              <img
-                                src={image.image_url}
-                                alt={image.caption || 'Gallery image'}
-                                className="w-full h-32 object-cover rounded-md"
-                              />
+                              {image.media_type === 'video' ? (
+                                <video
+                                  src={image.image_url}
+                                  controls
+                                  muted
+                                  className="w-full h-32 object-cover rounded-md"
+                                />
+                              ) : (
+                                <img
+                                  src={image.image_url}
+                                  alt={image.caption || 'Gallery image'}
+                                  className="w-full h-32 object-cover rounded-md"
+                                />
+                              )}
                               <button
                                 onClick={() => deleteGalleryImage(image.id)}
                                 className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
                               >
                                 ✕
                               </button>
+                              {image.caption && (
+                                <p className="absolute bottom-1 left-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 py-0.5 rounded truncate">
+                                  {image.caption}
+                                </p>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -1142,34 +1269,80 @@ export default function AdminPage() {
                         {showGalleryImageUpload === event.id ? (
                           <form onSubmit={(e) => handleAddGalleryImage(e, event.id)} className="border-t pt-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Upload Images & Video (Max 5 images + 1 video ≤ 20MB)
+                              </label>
                               <input
                                 type="file"
-                                onChange={(e) => setGalleryImageFile2(e.target.files ? e.target.files[0] : null)}
+                                multiple
+                                onChange={(e) => handleGalleryFilesChange(e.target.files)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900"
-                                accept="image/*"
-                                required
+                                accept="image/*,video/*"
+                                required={galleryFiles.length === 0 && !galleryVideoFile}
                               />
+                              {galleryUploadError && (
+                                <p className="text-red-600 text-sm mt-2">{galleryUploadError}</p>
+                              )}
                             </div>
+
+                            {/* Preview Section */}
+                            {(galleryImagePreviews.length > 0 || galleryVideoPreview) && (
+                              <div className="mt-4">
+                                <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
+                                  {galleryImagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative">
+                                      <img
+                                        src={preview}
+                                        alt={`Preview ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded border"
+                                      />
+                                      <span className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                                        {index + 1}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {galleryVideoPreview && (
+                                    <div className="relative">
+                                      <video
+                                        src={galleryVideoPreview}
+                                        className="w-full h-20 object-cover rounded border"
+                                        muted
+                                      />
+                                      <span className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                                        Video
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1 mt-3">Caption</label>
+                              <label className="block text-sm font-medium text-gray-700 mb-1 mt-3">Caption (optional)</label>
                               <input
                                 type="text"
                                 value={galleryImageForm.caption}
                                 onChange={(e) => setGalleryImageForm({ ...galleryImageForm, caption: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900"
+                                placeholder="Applies to all uploaded files"
                               />
                             </div>
                             <div className="flex space-x-2 mt-3">
                               <button
                                 type="submit"
-                                className="bg-su-blue text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
+                                disabled={galleryFiles.length === 0 && !galleryVideoFile}
+                                className="bg-su-blue text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
                               >
-                                Upload
+                                Upload {galleryFiles.length > 0 && `${galleryFiles.length} images`}
+                                {galleryVideoFile && ' + 1 video'}
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setShowGalleryImageUpload(null)}
+                                onClick={() => {
+                                  setShowGalleryImageUpload(null);
+                                  clearGalleryFiles();
+                                }}
                                 className="bg-gray-300 text-gray-800 px-3 py-1 rounded-md text-sm hover:bg-gray-400"
                               >
                                 Cancel
@@ -1181,7 +1354,7 @@ export default function AdminPage() {
                             onClick={() => setShowGalleryImageUpload(event.id)}
                             className="text-sm text-su-blue hover:text-blue-700 font-medium"
                           >
-                            + Add Image
+                            + Add Images/Video
                           </button>
                         )}
                       </div>

@@ -206,19 +206,29 @@ export default function GalleryDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {galleryImages.map((image) => (
               <div key={image.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                {/* Image Container */}
+                {/* Media Container */}
                 <div className="w-full h-64 bg-gray-100 flex items-center justify-center relative overflow-hidden">
                   {!imageErrors[image.id] ? (
-                    <img
-                      src={image.image_url}
-                      alt={image.caption || 'Gallery image'}
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                      onError={() => handleImageError(image.id)}
-                    />
+                    image.media_type === 'video' ? (
+                      <video
+                        src={image.image_url}
+                        controls
+                        muted
+                        className="w-full h-full object-cover"
+                        onError={() => handleImageError(image.id)}
+                      />
+                    ) : (
+                      <img
+                        src={image.image_url}
+                        alt={image.caption || 'Gallery image'}
+                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                        onError={() => handleImageError(image.id)}
+                      />
+                    )
                   ) : (
                     <div className="text-center">
                       <div className="text-4xl mb-2">🖼️</div>
-                      <p className="text-gray-400 text-sm">Image not available</p>
+                      <p className="text-gray-400 text-sm">Media not available</p>
                     </div>
                   )}
                 </div>
