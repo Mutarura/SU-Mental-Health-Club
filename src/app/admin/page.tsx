@@ -107,7 +107,7 @@ export default function AdminPage() {
   const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
   const [resourceForm, setResourceForm] = useState({
     title: '',
-    category: 'article' as 'article' | 'guide' | 'podcast',
+    category: 'article' as 'article' | 'wellness_tools' | 'podcast',
     url_or_storage_path: '',
     tags: [] as string[],
     description: '',
@@ -416,6 +416,7 @@ export default function AdminPage() {
         image_url: imageUrl || null,
         start: new Date(eventForm.start).toISOString(),
         end: new Date(eventForm.end).toISOString(),
+        calendar_link: eventForm.calendar_link || null
       };
 
       if (editingEventId) {
@@ -534,7 +535,7 @@ export default function AdminPage() {
     setEditingResourceId(resource.id);
     setResourceForm({
       title: resource.title,
-      category: (resource.category as 'article' | 'guide' | 'podcast') || 'article',
+      category: (resource.category as 'article' | 'wellness_tools' | 'podcast') || 'article',
       description: resource.description,
       url_or_storage_path: resource.url_or_storage_path || '',
       tags: resource.tags || [],
@@ -1264,6 +1265,17 @@ export default function AdminPage() {
                         />
                       </div>
                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Learn More URL</label>
+                        <input
+                          type="url"
+                          value={eventForm.calendar_link}
+                          onChange={(e) => setEventForm({ ...eventForm, calendar_link: e.target.value })}
+                          placeholder="https://example.com/details-or-registration"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Optional: external page, registration, or calendar link</p>
+                      </div>
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
                         <input
                           type="file"
@@ -1366,12 +1378,12 @@ export default function AdminPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                         <select
                           value={resourceForm.category}
-                          onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value as any })}
+                          onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value as 'article' | 'wellness_tools' | 'podcast' })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
                           required
                         >
                           <option value="article">Article</option>
-                          <option value="guide">Guide</option>
+                          <option value="wellness_tools">Wellness Tools</option>
                           <option value="podcast">Podcast</option>
                         </select>
                       </div>

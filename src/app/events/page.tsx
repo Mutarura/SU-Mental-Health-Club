@@ -223,6 +223,7 @@ export default function EventsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                // inside EventsPage(), upcoming events card
                 {upcomingEvents.map((event) => (
                   <div key={event.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden group">
                     {/* Image Container */}
@@ -277,9 +278,18 @@ export default function EventsPage() {
                       </div>
 
                       {/* CTA Button */}
-                      <button className="w-full bg-su-blue text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg active:scale-95">
-                        Register Now
-                      </button>
+                      {event.calendar_link ? (
+                        <a
+                          href={event.calendar_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-block text-center bg-su-blue text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg active:scale-95"
+                        >
+                          Learn More
+                        </a>
+                      ) : (
+                        <div className="w-full text-center text-xs text-gray-500">No external link provided</div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -297,6 +307,7 @@ export default function EventsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                // inside EventsPage(), past events card
                 {pastEvents.map((event) => (
                   <div key={event.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden group opacity-75 hover:opacity-100">
                     {/* Image Container */}
@@ -350,10 +361,20 @@ export default function EventsPage() {
                         <span className="line-clamp-2">{event.location}</span>
                       </div>
 
-                      {/* Info Text */}
-                      <p className="text-xs text-gray-500 mt-5 font-medium">
-                        This event has concluded
-                      </p>
+                      {/* Info and Link */}
+                      <div className="mt-5 flex items-center justify-between">
+                        <p className="text-xs text-gray-500 font-medium">This event has concluded</p>
+                        {event.calendar_link && (
+                          <a
+                            href={event.calendar_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs bg-gray-100 text-su-blue px-3 py-1 rounded-md hover:bg-gray-200"
+                          >
+                            Learn More
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
