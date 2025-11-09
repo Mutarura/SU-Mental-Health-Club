@@ -1,10 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // ✅ Initialize Supabase client safely
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase env missing: check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
+}
+
+export const supabase: SupabaseClient = createClient(supabaseUrl ?? '', supabaseAnonKey ?? '');
 
 /**
  * Upload image to Supabase Storage
@@ -27,10 +31,11 @@ export async function uploadImageToStorage(file: File, folder: string): Promise<
     .upload(filePath, file, {
       cacheControl: '3600',
       upsert: false,
+      contentType: file.type || undefined,
     });
 
   if (error) {
-    console.error('Error uploading image:', error.message);
+    console.error(`Error uploading to bucket 'public-assets' at path '${filePath}':`, error.message);
     return null;
   }
 
