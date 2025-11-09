@@ -223,7 +223,7 @@ export default function EventsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                // inside EventsPage(), upcoming events card
+                {/* upcoming events card */}
                 {upcomingEvents.map((event) => (
                   <div key={event.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden group">
                     {/* Image Container */}
@@ -307,7 +307,7 @@ export default function EventsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                // inside EventsPage(), past events card
+                {/* past events card */}
                 {pastEvents.map((event) => (
                   <div key={event.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden group opacity-75 hover:opacity-100">
                     {/* Image Container */}

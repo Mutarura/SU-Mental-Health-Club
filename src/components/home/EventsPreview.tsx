@@ -76,6 +76,7 @@ export default function EventsPreview() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        .gte('start', new Date().toISOString()) // only upcoming events
         .order('start', { ascending: true })
         .limit(3);
 
@@ -109,6 +110,10 @@ export default function EventsPreview() {
     });
   };
 
+  // Filter again defensively (covers fallback/defaults)
+  const now = new Date();
+  const upcomingEvents = events.filter(e => new Date(e.start) >= now);
+
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -129,78 +134,84 @@ export default function EventsPreview() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {events.map((event) => (
-                <div key={event.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all hover:scale-105 overflow-hidden group h-full">
-                  {/* Image Container */}
-                  <div className="relative h-48 bg-gradient-to-br from-su-blue to-blue-600 overflow-hidden flex items-center justify-center">
-                    {event.image_url && !imageErrors[event.id] ? (
-                      <img
-                        src={event.image_url}
-                        alt={event.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                        onError={() => handleImageError(event.id)}
-                      />
-                    ) : (
-                      <div className="text-center">
-                        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                          <CalendarIcon className="w-10 h-10 text-white" />
+            {upcomingEvents.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-600 text-lg">No upcoming events at the moment.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {upcomingEvents.map((event) => (
+                  <div key={event.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all hover:scale-105 overflow-hidden group h-full">
+                    {/* Image Container */}
+                    <div className="relative h-48 bg-gradient-to-br from-su-blue to-blue-600 overflow-hidden flex items-center justify-center">
+                      {event.image_url && !imageErrors[event.id] ? (
+                        <img
+                          src={event.image_url}
+                          alt={event.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={() => handleImageError(event.id)}
+                        />
+                      ) : (
+                        <div className="text-center">
+                          <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <CalendarIcon className="w-10 h-10 text-white" />
+                          </div>
+                          <p className="text-white/70 text-xs">Event</p>
                         </div>
-                        <p className="text-white/70 text-xs">Event</p>
+                      )}
+                      <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                        Upcoming
                       </div>
-                    )}
-                    <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                      Upcoming
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6">
+                      {/* Date & Time */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-su-blue font-semibold mb-3">
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarIcon className="w-3 h-3" />
+                          {formatDate(event.start)}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <ClockIcon className="w-3 h-3" />
+                          {formatTime(event.start)}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-su-blue transition-colors">
+                        {event.title}
+                      </h3>
+
+                      {/* Location */}
+                      <div className="flex items-start gap-2 text-xs text-gray-600 mb-3">
+                        <LocationIcon className="w-3 h-3 mt-0.5 flex-shrink-0 text-su-red" />
+                        <span className="line-clamp-2">{event.location}</span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {event.description}
+                      </p>
+
+                      {/* CTA Row */}
+                      {event.calendar_link && (
+                        <div className="mt-4">
+                          <a
+                            href={event.calendar_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block bg-su-blue text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
+                          >
+                            Learn More
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    {/* Date & Time */}
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-su-blue font-semibold mb-3">
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarIcon className="w-3 h-3" />
-                        {formatDate(event.start)}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <ClockIcon className="w-3 h-3" />
-                        {formatTime(event.start)}
-                      </span>
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-su-blue transition-colors">
-                      {event.title}
-                    </h3>
-
-                    {/* Location */}
-                    <div className="flex items-start gap-2 text-xs text-gray-600 mb-3">
-                      <LocationIcon className="w-3 h-3 mt-0.5 flex-shrink-0 text-su-red" />
-                      <span className="line-clamp-2">{event.location}</span>
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                      {event.description}
-                    </p>
-
-                    {/* CTA Row */}
-                    {event.calendar_link && (
-                      <div className="mt-4">
-                        <a
-                          href={event.calendar_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block bg-su-blue text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
-                        >
-                          Learn More
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-            ))}
-          </div>
+                ))}
+              </div>
+            )}
 
             {/* CTA Button */}
             <div className="text-center mt-12">
