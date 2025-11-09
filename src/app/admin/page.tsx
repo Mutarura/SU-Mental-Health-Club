@@ -129,9 +129,7 @@ export default function AdminPage() {
   const [councilForm, setCouncilForm] = useState({
     name: '',
     role: '',
-    bio: '',
     year: '',
-    email: '',
     linkedin_url: '',
     photo_url: ''
   });
@@ -690,9 +688,7 @@ export default function AdminPage() {
       const payload = {
         name: councilForm.name,
         role: councilForm.role,
-        bio: councilForm.bio,
         year: councilForm.year,
-        email: councilForm.email,
         linkedin_url: councilForm.linkedin_url || null,
         photo_url: photoUrl || null,
       };
@@ -707,7 +703,7 @@ export default function AdminPage() {
 
       setShowCouncilForm(false);
       setEditingCouncilId(null);
-      setCouncilForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
+      setCouncilForm({ name: '', role: '', year: '', linkedin_url: '', photo_url: '' });
       setCouncilImageFile(null);
       fetchCouncilLeaders();
     } catch (error: any) {
@@ -734,9 +730,7 @@ export default function AdminPage() {
     setCouncilForm({
       name: member.name,
       role: member.role,
-      bio: member.bio,
       year: member.year,
-      email: member.email,
       linkedin_url: member.linkedin_url || '',
       photo_url: member.photo_url || '',
     });
@@ -1666,7 +1660,7 @@ export default function AdminPage() {
                     onClick={() => {
                       setShowCouncilForm(true);
                       setEditingCouncilId(null);
-                      setCouncilForm({ name: '', role: '', bio: '', year: '', email: '', linkedin_url: '', photo_url: '' });
+                      setCouncilForm({ name: '', role: '', year: '', linkedin_url: '', photo_url: '' });
                     }}
                     className="bg-su-blue text-white px-4 py-2 rounded-md hover:bg-blue-700"
                   >
@@ -1700,16 +1694,7 @@ export default function AdminPage() {
                           />
                         </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                        <textarea
-                          value={councilForm.bio}
-                          onChange={(e) => setCouncilForm({ ...councilForm, bio: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                          rows={3}
-                          required
-                        />
-                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
@@ -1718,16 +1703,6 @@ export default function AdminPage() {
                             value={councilForm.year}
                             onChange={(e) => setCouncilForm({ ...councilForm, year: e.target.value })}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                          <input
-                            type="email"
-                            value={councilForm.email}
-                            onChange={(e) => setCouncilForm({ ...councilForm, email: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
-                            required
                           />
                         </div>
                       </div>
@@ -1771,9 +1746,8 @@ export default function AdminPage() {
                           className="w-full h-48 object-cover rounded-md mb-4"
                         />
                       )}
-                      <h3 className="text-lg font-semibold text-gray-900">{leader.name}</h3>
                       <p className="text-sm text-su-blue font-medium">{leader.role}</p>
-                      <p className="text-sm text-gray-600 mt-2">{leader.bio}</p>
+                      {leader.year && <p className="text-sm text-gray-600">{leader.year}</p>}
                       <div className="flex space-x-2 mt-4">
                         <button
                           onClick={() => editCouncilMember(leader)}
@@ -1783,7 +1757,7 @@ export default function AdminPage() {
                         </button>
                         <button
                           onClick={() => deleteCouncilMember(leader.id)}
-                          className="flex-1 text-red-600 hover:text-red-900 font-medium text-sm"
+                          className="flex-1 text-red-600 hover:text-red-700 font-medium text-sm"
                         >
                           Delete
                         </button>
