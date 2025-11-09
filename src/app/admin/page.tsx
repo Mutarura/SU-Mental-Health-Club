@@ -362,21 +362,27 @@ export default function AdminPage() {
     try {
       setUploadingGalleryImage(true);
       let currentDisplayOrder = galleryImages.filter(img => img.gallery_event_id === galleryEventId).length;
-      
+
       // Upload multiple images
       if (galleryFiles.length > 0) {
         for (let i = 0; i < galleryFiles.length; i++) {
           const file = galleryFiles[i];
           const publicUrl = await uploadImageToStorage(file, 'gallery/images');
-          if (!publicUrl) throw new Error(`Image ${i + 1} upload failed`);
+          if (!publicUrl) {
+            throw new Error(`Storage upload failed for image ${i + 1}. Check browser console for details.`);
+          }
 
-          await supabase.from('gallery_images').insert([{
+          const { error: dbError } = await supabase.from('gallery_images').insert([{
             gallery_event_id: galleryEventId,
             image_url: publicUrl,
             caption: galleryImageForm.caption || null,
             display_order: currentDisplayOrder + i + 1,
             media_type: 'image',
           }]);
+
+          if (dbError) {
+            throw new Error(`Database insert failed for image ${i + 1}: ${dbError.message}`);
+          }
         }
         currentDisplayOrder += galleryFiles.length;
       }
@@ -384,15 +390,21 @@ export default function AdminPage() {
       // Upload video if present
       if (galleryVideoFile) {
         const publicUrl = await uploadImageToStorage(galleryVideoFile, 'gallery/videos');
-        if (!publicUrl) throw new Error('Video upload failed');
+        if (!publicUrl) {
+          throw new Error('Storage upload failed for video. Check browser console for details.');
+        }
 
-        await supabase.from('gallery_images').insert([{
+        const { error: dbError } = await supabase.from('gallery_images').insert([{
           gallery_event_id: galleryEventId,
           image_url: publicUrl,
           caption: galleryImageForm.caption || null,
           display_order: currentDisplayOrder + 1,
           media_type: 'video',
         }]);
+
+        if (dbError) {
+          throw new Error(`Database insert failed for video: ${dbError.message}`);
+        }
       }
 
       setMessage('Gallery media added successfully!');
