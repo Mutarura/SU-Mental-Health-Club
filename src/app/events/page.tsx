@@ -156,7 +156,7 @@ export default function EventsPage() {
     <div className="py-12 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-su-blue mb-4">📅 Events</h1>
           <div className="w-24 h-1 bg-su-red mx-auto mb-6"></div>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">

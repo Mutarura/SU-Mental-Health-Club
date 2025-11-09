@@ -28,7 +28,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased min-h-screen flex flex-col`}>
         <Navbar />
-        <main className="flex-grow">
+        <main className="flex-grow pb-16">
           {children}
         </main>
         {!isAdminPage && <Footer />}

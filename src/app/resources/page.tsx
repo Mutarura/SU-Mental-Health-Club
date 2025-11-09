@@ -173,7 +173,7 @@ export default function ResourcesPage() {
     <div className="py-12 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Logo */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-16">
           <div className="flex justify-center items-center mb-6">
             <div className="w-16 h-16 bg-white rounded-full p-2 shadow-md mr-4">
               <div className="w-full h-full bg-white rounded-full flex items-center justify-center">
@@ -255,8 +255,8 @@ export default function ResourcesPage() {
             const label = isArticle ? 'Article' : isPodcast ? 'Podcast' : 'Tool';
             const ctaLabel = isArticle ? 'Read Article' : isPodcast ? 'Listen' : 'Open Tool';
             return (
-              <div key={resource.id} className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
-                <div className="p-6">
+              <div key={resource.id} className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow flex flex-col">
+                <div className="p-6 flex flex-col flex-grow">
                   {/* Icon pill */}
                   <div className="flex items-center mb-4">
                     {(() => {
@@ -279,18 +279,18 @@ export default function ResourcesPage() {
                   </div>
                   {/* Title and description */}
                   <h3 className="text-xl font-bold text-gray-900 mb-3">{resource.title}</h3>
-                  <p className="text-gray-600 mb-6 leading-relaxed">{resource.description}</p>
+                  <p className="text-gray-600 leading-relaxed flex-grow">{resource.description}</p>
                   {resource.url_or_storage_path ? (
                     <a
                       href={resource.url_or_storage_path}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center bg-su-red text-white px-6 py-3 rounded-md font-medium hover:bg-red-700 transition-colors"
+                      className="inline-flex items-center justify-center bg-su-red text-white px-6 py-3 rounded-md font-medium hover:bg-red-700 transition-colors mt-6"
                     >
                       {ctaLabel}
                     </a>
                   ) : (
-                    <button disabled className="inline-flex items-center justify-center bg-gray-400 text-white px-6 py-3 rounded-md font-medium cursor-not-allowed">
+                    <button disabled className="inline-flex items-center justify-center bg-gray-400 text-white px-6 py-3 rounded-md font-medium cursor-not-allowed mt-6">
                       Coming Soon
                     </button>
                   )}

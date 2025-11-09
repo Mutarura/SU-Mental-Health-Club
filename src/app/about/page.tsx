@@ -384,11 +384,11 @@ export default function AboutPage() {
               <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center">
                 <BalanceIcon className="w-8 h-8 text-su-gold" />
               </div>
-              <h1 className="text-3xl font-bold text-su-blue">
+              <h1 className="text-4xl font-bold text-su-blue">
                 About Us
               </h1>
             </div>
-            <div className="w-24 h-1 bg-su-red mx-auto mb-8"></div>
+            <div className="w-24 h-1 bg-su-red mx-auto mb-16"></div>
           <p className="mt-4 text-gray-600 text-lg max-w-3xl mx-auto">
             We’re a student-led community focused on awareness, support, and resilience. Our mission is to foster open
             conversation, reduce stigma, and connect peers with resources.
