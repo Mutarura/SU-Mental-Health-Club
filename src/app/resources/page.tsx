@@ -255,7 +255,7 @@ export default function ResourcesPage() {
             const label = isArticle ? 'Article' : isPodcast ? 'Podcast' : 'Tool';
             const ctaLabel = isArticle ? 'Read Article' : isPodcast ? 'Listen' : 'Open Tool';
             return (
-              <div key={resource.id} className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow flex flex-col">
+              <div key={resource.id} className="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-shadow flex flex-col border border-gray-200">
                 <div className="p-6 flex flex-col flex-grow">
                   {/* Icon pill */}
                   <div className="flex items-center mb-4">
@@ -285,12 +285,12 @@ export default function ResourcesPage() {
                       href={resource.url_or_storage_path}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center bg-su-red text-white px-6 py-3 rounded-md font-medium hover:bg-red-700 transition-colors mt-6"
+                      className="inline-flex items-center bg-su-red text-white px-4 py-2 rounded-md font-medium hover:bg-red-700 transition-colors mt-6 w-fit"
                     >
                       {ctaLabel}
                     </a>
                   ) : (
-                    <button disabled className="inline-flex items-center justify-center bg-gray-400 text-white px-6 py-3 rounded-md font-medium cursor-not-allowed mt-6">
+                    <button disabled className="inline-flex items-center bg-gray-400 text-white px-4 py-2 rounded-md font-medium cursor-not-allowed mt-6 w-fit">
                       Coming Soon
                     </button>
                   )}

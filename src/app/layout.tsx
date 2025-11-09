@@ -1,6 +1,5 @@
 'use client';
 
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "../components/layout/Navbar";
@@ -23,8 +22,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/strathmore-logo.png" />
         <meta name="google-site-verification" content="google8bfa5cb007efc481.html" />
+        <link rel="icon" href="/strathmore-logo.png" />
       </head>
       <body className={`${inter.variable} antialiased min-h-screen flex flex-col`}>
         <Navbar />

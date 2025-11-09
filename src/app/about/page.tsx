@@ -470,7 +470,7 @@ export default function AboutPage() {
                   return (
                     <div
                       key={role}
-                      className="flex-shrink-0 w-80 bg-white rounded-2xl border border-gray-200 p-6 snap-center shadow-sm hover:shadow-md transition-shadow"
+                      className="flex-shrink-0 w-80 bg-white rounded-2xl border border-gray-200 p-6 snap-center shadow-lg hover:shadow-xl transition-shadow"
                     >
                       {/* Photo */}
                       <div className="flex justify-center mb-4">
@@ -506,7 +506,7 @@ export default function AboutPage() {
           </section>
 
           {/* Contact Us Section */}
-          <section className="text-center py-12 bg-white rounded-lg shadow-xl border border-gray-200 mx-auto max-w-4xl mt-8">
+          <section className="text-center py-12 bg-gray-100 rounded-lg shadow-xl border border-gray-200 mx-auto max-w-4xl mt-8">
             <h2 className="text-3xl font-bold text-su-blue mb-4">Get Involved!</h2>
             <p className="text-gray-700 max-w-2xl mx-auto mb-6">
               Have questions, suggestions, or want to join our team? Reach out to us!
