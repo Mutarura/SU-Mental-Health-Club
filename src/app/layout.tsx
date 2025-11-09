@@ -12,12 +12,6 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export const metadata: Metadata = {
-  icons: {
-    icon: "/strathmore-logo.png",
-  },
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
