@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Resource } from '../../types/database.types';
 import { BookIcon, DocumentIcon, SoundIcon, LightbulbIcon } from '../../components/icons';
+import Link from 'next/link';
 
 const DEFAULT_RESOURCES: Resource[] = [
   {

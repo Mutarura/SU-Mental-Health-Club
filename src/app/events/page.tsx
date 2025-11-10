@@ -283,7 +283,7 @@ export default function EventsPage() {
                           href={event.calendar_link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full inline-block text-center bg-su-blue text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg active:scale-95"
+                          className="w-full inline-block text-center bg-su-blue text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg active:scale-95"
                         >
                           Learn More
                         </a>
@@ -369,7 +369,7 @@ export default function EventsPage() {
                             href={event.calendar_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs bg-gray-100 text-su-blue px-3 py-1 rounded-md hover:bg-gray-200"
+                            className="text-xs bg-gray-100 text-su-blue px-6 py-2 rounded-md hover:bg-gray-200"
                           >
                             Learn More
                           </a>

@@ -159,8 +159,8 @@ export default function GalleryPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {galleryEvents.map((event) => (
-              <Link href={`/gallery/${event.slug}`} key={event.id}>
-                <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <div key={event.id}>
+                <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
                   {/* Cover Image */}
                   <div className="w-full h-64 bg-gray-100 flex items-center justify-center relative overflow-hidden">
                     {event.cover_image && !imageErrors[event.id] ? (
@@ -179,9 +179,9 @@ export default function GalleryPage() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-6">
+                  <div className="p-6 flex flex-col flex-grow">
                     <h3 className="text-xl font-bold text-su-blue mb-3 line-clamp-2">{event.title}</h3>
-                    <p className="text-gray-600 text-sm line-clamp-3 mb-4">{event.short_description}</p>
+                    <p className="text-gray-600 text-sm line-clamp-3 mb-4 flex-grow">{event.short_description}</p>
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-sm text-gray-500">
                         {galleryByEvent[event.id]?.length || 0} media items
@@ -192,12 +192,15 @@ export default function GalleryPage() {
                         </span>
                       )}
                     </div>
-                    <div className="inline-block px-4 py-2 bg-su-blue text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+                    <Link
+                      href={`/gallery/${event.slug}`}
+                      className="inline-block px-4 py-2 bg-su-blue text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors w-fit"
+                    >
                       View Gallery
-                    </div>
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

@@ -197,14 +197,14 @@ export default function EventsPreview() {
                       {/* CTA Row */}
                       {event.calendar_link && (
                         <div className="mt-4">
-                          <a
+                          <Link
                             href={event.calendar_link}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-block bg-su-blue text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
                           >
                             Learn More
-                          </a>
+                          </Link>
                         </div>
                       )}
                     </div>
@@ -215,8 +215,8 @@ export default function EventsPreview() {
 
             {/* CTA Button */}
             <div className="text-center mt-12">
-              <Link href="/events" className="inline-block bg-su-blue text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
-                View All Events →
+              <Link href="/events" className="inline-block bg-su-blue text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+                View All Events
               </Link>
             </div>
           </>

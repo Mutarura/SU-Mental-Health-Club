@@ -29,12 +29,12 @@ export default function Footer() {
           .single();
 
         if (error) {
-          console.error('Error fetching footer data:', error);
+          console.error('Error fetching footer data:', error.message || 'Unknown error');
         } else {
           setFooterData(data);
         }
-      } catch (error) {
-        console.error('Error fetching footer data:', error);
+      } catch (error: any) {
+        console.error('Error fetching footer data:', error.message || 'Unknown error');
       } finally {
         setLoading(false);
       }
