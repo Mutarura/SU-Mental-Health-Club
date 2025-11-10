@@ -103,6 +103,9 @@ export default function Footer() {
               <a href="https://www.instagram.com/su_mentalhealthclub/" target="_blank" rel="noopener noreferrer" className="hover:text-su-gold transition-colors transform hover:scale-110">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
               </a>
+              <a href="https://x.com/su_mentalhealth?s=20" target="_blank" rel="noopener noreferrer" className="hover:text-su-gold transition-colors transform hover:scale-110">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 16 16" fill="currentColor" className="bi bi-twitter-x"> <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/> </svg>
+              </a>
             </div>
           </div>
         </div>
