@@ -117,6 +117,9 @@ export default function Footer() {
           <p className="text-center text-xs mt-4 text-white/80">
             <strong>Privacy Statement:</strong> This site does not collect personal identifying data.
           </p>
+          <p className="text-center text-xs mt-4 text-white/80">
+            Made with <span className="text-red-500">❤️</span> in Strathmore
+          </p>
         </div>
       </div>
     </footer>
