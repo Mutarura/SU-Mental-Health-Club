@@ -23,6 +23,7 @@ interface AdminStats {
   totalCouncilLeaders: number;
   totalAwareness: number;
   totalGalleryEvents: number;
+  totalMonthlyCampaigns: number;
 }
 
 type AdminTab = 'dashboard' | 'gallery' | 'events' | 'resources' | 'council' | 'awareness' | 'quotes';
@@ -31,14 +32,66 @@ export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+  const [incorrectAttemptCount, setIncorrectAttemptCount] = useState(0);
+  const [showForgotPasswordLink, setShowForgotPasswordLink] = useState(false);
+  const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+  const [totalQuotes, setTotalQuotes] = useState(0);
+  const [totalMonthlyCampaigns, setTotalMonthlyCampaigns] = useState(0);
+
+  const handleForgotPassword = async () => {
+     if (!window.confirm('Are you sure you want to reset the password? This will log you out.')) {
+       return;
+     }
+     setAuthLoading(true);
+     const { error } = await supabase.auth.signOut();
+     if (error) {
+       setMessage(`Error signing out: ${error.message}`);
+     } else {
+       setUser(null);
+       setIsAdmin(false);
+       setShowEmailPrompt(true);
+       setMessage('');
+     }
+     setAuthLoading(false);
+   };
+
+  const handlePasswordReset = async () => {
+    if (!supabase) {
+      setMessage('Database not configured');
+      return;
+    }
+    if (!email) {
+      setMessage('Please enter your email address to reset your password.');
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/admin/update-password`,
+      });
+      if (error) {
+        setMessage(error.message);
+      } else {
+        setMessage('Password reset email sent. Check your inbox.');
+        setShowEmailPrompt(false);
+      }
+    } catch (error) {
+      setMessage('Failed to send password reset email.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, [supabase]);
+
 
   // Quotes states
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -65,9 +118,10 @@ export default function AdminPage() {
     totalEvents: 0,
     totalResources: 0,
     totalAwareness: 0,
-    totalQuotes: 0,
+    totalQuotes: totalQuotes,
     totalCouncilLeaders: 0,
     totalGalleryEvents: 0,
+    totalMonthlyCampaigns: totalMonthlyCampaigns,
   });
 
   // Gallery states
@@ -239,6 +293,7 @@ export default function AdminPage() {
         totalQuotes: quotesCount.count || 0,
         totalCouncilLeaders: councilCount.count || 0,
         totalGalleryEvents: galleryCount.count || 0,
+        totalMonthlyCampaigns: awarenessCount.count || 0, // Assuming monthly_awareness count is used for totalMonthlyCampaigns
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -877,7 +932,16 @@ export default function AdminPage() {
     setAuthLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage(error.message);
+      if (error) {
+        setMessage(error.message);
+        setIncorrectAttemptCount(prev => prev + 1);
+        if (incorrectAttemptCount >= 0) { // Show after first incorrect attempt
+          setShowForgotPasswordLink(true);
+        }
+      } else {
+        setIncorrectAttemptCount(0); // Reset on successful login
+        setShowForgotPasswordLink(false);
+      }
     } catch (error) {
       setMessage('Sign in failed');
     } finally {
@@ -885,33 +949,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setMessage('Passwords do not match');
-      return;
-    }
-
-    if (!supabase) {
-      setMessage('Database not configured');
-      return;
-    }
-
-    setAuthLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName } }
-      });
-      if (error) setMessage(error.message);
-      else setMessage('Check your email for confirmation. Admin access is granted once your email is whitelisted in the admins table.');
-    } catch (error) {
-      setMessage('Sign up failed');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   const handleSignOut = async () => {
     if (supabase) await supabase.auth.signOut();
@@ -937,10 +974,10 @@ export default function AdminPage() {
           <div className="text-center">
             <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Admin Access</h2>
             <p className="mt-2 text-sm text-gray-600">
-              {isLogin ? 'Sign in to access the admin dashboard' : 'Create an admin account'}
+              Sign in to access the admin dashboard
             </p>
           </div>
-          <form className="mt-8 space-y-6" onSubmit={isLogin ? handleSignIn : handleSignUp}>
+          <form className="mt-8 space-y-6" onSubmit={handleSignIn}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <input
@@ -951,19 +988,6 @@ export default function AdminPage() {
                 required
               />
             </div>
-
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
-                  required
-                />
-              </div>
-            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
@@ -976,41 +1000,68 @@ export default function AdminPage() {
               />
             </div>
 
-            {!isLogin && (
+            {showForgotPasswordLink && (
+              <div className="text-sm text-right">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="font-medium text-su-blue hover:text-su-blue-dark focus:outline-none focus:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
+            <div>
+              <button
+                type="submit"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-su-blue hover:bg-su-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-su-blue"
+                disabled={authLoading}
+              >
+                {authLoading ? 'Loading...' : 'Sign in'}
+              </button>
+            </div>
+
+            {message && (
+              <div className="mt-4 text-center text-sm font-medium text-red-600">
+                {message}
+              </div>
+            )}
+          </form>
+
+          {showEmailPrompt && (
+            <div className="mt-4 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Enter your email to reset password</label>
                 <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-su-blue text-gray-900 bg-white"
                   required
                 />
               </div>
-            )}
-
-            {message && (
-              <div className="p-3 rounded-md text-sm bg-red-50 text-red-700 border border-red-200">{message}</div>
-            )}
-
-            <button
-              type="submit"
-              disabled={authLoading}
-              className="w-full bg-su-blue text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-su-blue disabled:opacity-50"
-            >
-              {authLoading ? (isLogin ? 'Signing In...' : 'Signing Up...') : (isLogin ? 'Sign In' : 'Sign Up')}
-            </button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                className="text-sm text-su-blue hover:underline"
-                onClick={() => setIsLogin(!isLogin)}
-              >
-                {isLogin ? 'No account? Create one' : 'Already have an account? Sign in'}
-              </button>
+              <div>
+                <button
+                  type="button"
+                  onClick={handlePasswordReset}
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-su-blue hover:bg-su-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  disabled={authLoading}
+                >
+                  {authLoading ? 'Sending...' : 'Send Reset Email'}
+                </button>
+              </div>
+              <div className="text-sm text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowEmailPrompt(false)}
+                  className="font-medium text-su-blue hover:text-su-blue-dark focus:outline-none focus:underline"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </form>
+          )}
         </div>
       </div>
     );
@@ -1077,6 +1128,14 @@ export default function AdminPage() {
                   Sign Out
                 </button>
               </div>
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleForgotPassword}
+                  className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                  Reset Password
+                </button>
+              </div>
             </nav>
           </aside>
 
@@ -1092,6 +1151,24 @@ export default function AdminPage() {
                       <div className="ml-4">
                         <p className="text-sm font-medium text-gray-600">Events</p>
                         <p className="text-2xl font-bold text-gray-900">{stats.totalEvents}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-purple-100 text-purple-600"><ChatIcon className="w-6 h-6" /></div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Total Quotes</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalQuotes}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center">
+                      <div className="p-3 rounded-full bg-yellow-100 text-yellow-600"><SunIcon className="w-6 h-6" /></div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-600">Monthly Campaigns</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats.totalMonthlyCampaigns}</p>
                       </div>
                     </div>
                   </div>
