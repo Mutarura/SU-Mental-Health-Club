@@ -37,3 +37,22 @@ body {
 .bg-su-red { background-color: var(--su-red); }
 .bg-su-gold { background-color: var(--su-gold); }
 .bg-su-black { background-color: var(--su-black); }
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

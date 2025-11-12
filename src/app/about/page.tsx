@@ -13,9 +13,6 @@ import {
   PeopleIcon,
 } from '../../components/icons';
 
-const ROLES = ['President', 'Vice President', 'Secretary'] as const;
-type Role = typeof ROLES[number];
-
 type LeaderForm = {
   name: string;
   email: string;
@@ -26,21 +23,9 @@ type LeaderForm = {
 };
 
 export default function AboutPage() {
-  const [leaders, setLeaders] = useState<Record<Role, CouncilLeader | null>>({
-    President: null,
-    'Vice President': null,
-    Secretary: null,
-  });
-  const [forms, setForms] = useState<Record<Role, LeaderForm>>({
-    President: { name: '', email: '', bio: '', year: '', linkedin_url: '', photo_url: '' },
-    'Vice President': { name: '', email: '', bio: '', year: '', linkedin_url: '', photo_url: '' },
-    Secretary: { name: '', email: '', bio: '', year: '', linkedin_url: '', photo_url: '' },
-  });
-  const [showEdit, setShowEdit] = useState<Record<Role, boolean>>({
-    President: false,
-    'Vice President': false,
-    Secretary: false,
-  });
+  const [leaders, setLeaders] = useState<CouncilLeader[]>([]);
+  const [forms, setForms] = useState<Record<string, LeaderForm>>({});
+  const [showEdit, setShowEdit] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [user, setUser] = useState<User | null>(null);
@@ -56,41 +41,33 @@ export default function AboutPage() {
         const { data, error } = await supabase
           .from('council_leaders')
           .select('*')
-          .in('role', ROLES);
+          .order('created_at', { ascending: true });
 
         if (error) {
           setMessage(error.message || 'Failed to load council leaders');
         } else {
-          const byRole: Record<Role, CouncilLeader | null> = {
-            President: null,
-            'Vice President': null,
-            Secretary: null,
-          };
+          setLeaders(data || []);
+          const initialForms: Record<string, LeaderForm> = {};
+          const initialShowEdit: Record<string, boolean> = {};
           data?.forEach((l: CouncilLeader) => {
-            const role = l.role as Role;
-            if (ROLES.includes(role)) {
-              byRole[role] = l;
-              setForms((prev) => ({
-                ...prev,
-                [role]: {
-                  name: l.name || '',
-                  email: l.email || '',
-                  bio: l.bio || '',
-                  year: l.year || '',
-                  linkedin_url: l.linkedin_url || '',
-                  photo_url: l.photo_url || '',
-                },
-              }));
-            }
+            initialForms[l.id] = {
+              name: l.name || '',
+              email: l.email || '',
+              bio: l.bio || '',
+              year: l.year || '',
+              linkedin_url: l.linkedin_url || '',
+              photo_url: l.photo_url || '',
+            };
+            initialShowEdit[l.id] = false;
           });
-          setLeaders(byRole);
+          setForms(initialForms);
+          setShowEdit(initialShowEdit);
         }
       } finally {
         setLoading(false);
       }
     };
 
-    // Check if user is authenticated and is an admin via user_metadata
     const checkUser = async () => {
       if (!supabase) return;
       const { data: { user } } = await supabase.auth.getUser();
@@ -105,12 +82,10 @@ export default function AboutPage() {
         .channel('council_leaders_changes')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'council_leaders' }, (payload: any) => {
           const l = payload.new as CouncilLeader;
-          const role = l.role as Role;
-          if (!ROLES.includes(role)) return;
-          setLeaders((prev) => ({ ...prev, [role]: l }));
+          setLeaders((prev) => [...prev, l]);
           setForms((prev) => ({
             ...prev,
-            [role]: {
+            [l.id]: {
               name: l.name || '',
               email: l.email || '',
               bio: l.bio || '',
@@ -122,12 +97,10 @@ export default function AboutPage() {
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'council_leaders' }, (payload: any) => {
           const l = payload.new as CouncilLeader;
-          const role = l.role as Role;
-          if (!ROLES.includes(role)) return;
-          setLeaders((prev) => ({ ...prev, [role]: l }));
+          setLeaders((prev) => prev.map((leader) => (leader.id === l.id ? l : leader)));
           setForms((prev) => ({
             ...prev,
-            [role]: {
+            [l.id]: {
               name: l.name || '',
               email: l.email || '',
               bio: l.bio || '',
@@ -139,127 +112,12 @@ export default function AboutPage() {
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'council_leaders' }, (payload: any) => {
           const l = payload.old as CouncilLeader;
-          const role = l.role as Role;
-          if (!ROLES.includes(role)) return;
-          setLeaders((prev) => ({ ...prev, [role]: null }));
-          setForms((prev) => ({
-            ...prev,
-            [role]: { name: '', email: '', bio: '', year: '', linkedin_url: '', photo_url: '' },
-          }));
-        })
-        .subscribe();
-
-      return () => {
-        if (supabase) supabase.removeChannel(channel);
-      };
-    };
-
-    fetchLeaders();
-    checkUser();
-    const cleanup = subscribeRealtime();
-    return cleanup;
-  }, []);
-
-  useEffect(() => {
-    const fetchLeaders = async () => {
-      try {
-        if (!supabase) {
-          setLoading(false);
-          return;
-        }
-        const { data, error } = await supabase
-          .from('council_leaders')
-          .select('*')
-          .in('role', ROLES);
-
-        if (error) {
-          setMessage(error.message || 'Failed to load council leaders');
-        } else {
-          const byRole: Record<Role, CouncilLeader | null> = {
-            President: null,
-            'Vice President': null,
-            Secretary: null,
-          };
-          data?.forEach((l: CouncilLeader) => {
-            const role = l.role as Role;
-            if (ROLES.includes(role)) {
-              byRole[role] = l;
-              setForms((prev) => ({
-                ...prev,
-                [role]: {
-                  name: l.name || '',
-                  email: l.email || '',
-                  bio: l.bio || '',
-                  year: l.year || '',
-                  linkedin_url: l.linkedin_url || '',
-                  photo_url: l.photo_url || '',
-                },
-              }));
-            }
+          setLeaders((prev) => prev.filter((leader) => leader.id !== l.id));
+          setForms((prev) => {
+            const newForms = { ...prev };
+            delete newForms[l.id];
+            return newForms;
           });
-          setLeaders(byRole);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Check if user is authenticated and is an admin via user_metadata
-    const checkUser = async () => {
-      if (!supabase) return;
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user || null);
-      setIsAdmin(Boolean(user?.user_metadata?.role === 'admin'));
-    };
-
-    // Subscribe to real-time updates for council_leaders
-    const subscribeRealtime = () => {
-      if (!supabase) return;
-      const channel = supabase
-        .channel('council_leaders_changes')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'council_leaders' }, (payload: any) => {
-          const l = payload.new as CouncilLeader;
-          const role = l.role as Role;
-          if (!ROLES.includes(role)) return;
-          setLeaders((prev) => ({ ...prev, [role]: l }));
-          setForms((prev) => ({
-            ...prev,
-            [role]: {
-              name: l.name || '',
-              email: l.email || '',
-              bio: l.bio || '',
-              year: l.year || '',
-              linkedin_url: l.linkedin_url || '',
-              photo_url: l.photo_url || '',
-            },
-          }));
-        })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'council_leaders' }, (payload: any) => {
-          const l = payload.new as CouncilLeader;
-          const role = l.role as Role;
-          if (!ROLES.includes(role)) return;
-          setLeaders((prev) => ({ ...prev, [role]: l }));
-          setForms((prev) => ({
-            ...prev,
-            [role]: {
-              name: l.name || '',
-              email: l.email || '',
-              bio: l.bio || '',
-              year: l.year || '',
-              linkedin_url: l.linkedin_url || '',
-              photo_url: l.photo_url || '',
-            },
-          }));
-        })
-        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'council_leaders' }, (payload: any) => {
-          const l = payload.old as CouncilLeader;
-          const role = l.role as Role;
-          if (!ROLES.includes(role)) return;
-          setLeaders((prev) => ({ ...prev, [role]: null }));
-          setForms((prev) => ({
-            ...prev,
-            [role]: { name: '', email: '', bio: '', year: '', linkedin_url: '', photo_url: '' },
-          }));
         })
         .subscribe();
 
@@ -274,7 +132,7 @@ export default function AboutPage() {
     return cleanup;
   }, []);
 
-  const saveLeader = async (role: Role) => {
+  const saveLeader = async (role: string) => {
     if (!supabase) return;
     if (!user || !isAdmin) {
       setMessage('You must be an admin to make changes');
@@ -284,7 +142,8 @@ export default function AboutPage() {
     const form = forms[role];
     setMessage('');
     try {
-      if (leaders[role]) {
+      const existingLeader = leaders.find(l => l.role === role);
+      if (existingLeader) {
         const { error, data } = await supabase
           .from('council_leaders')
           .update({
@@ -295,7 +154,7 @@ export default function AboutPage() {
             linkedin_url: form.linkedin_url || null,
             photo_url: form.photo_url || null,
           })
-          .eq('id', leaders[role]!.id)
+          .eq('id', existingLeader.id)
           .select();
 
         if (error) {
@@ -303,7 +162,7 @@ export default function AboutPage() {
           return;
         }
         const updated = data?.[0] as CouncilLeader;
-        setLeaders((prev) => ({ ...prev, [role]: updated }));
+        setLeaders((prev) => prev.map(l => l.id === updated.id ? updated : l));
         setMessage(`${role} updated successfully`);
       } else {
         const { error, data } = await supabase
@@ -326,7 +185,7 @@ export default function AboutPage() {
           return;
         }
         const created = data?.[0] as CouncilLeader;
-        setLeaders((prev) => ({ ...prev, [role]: created }));
+        setLeaders((prev) => [...prev, created]);
         setMessage(`${role} created successfully`);
       }
       setShowEdit((prev) => ({ ...prev, [role]: false }));
@@ -335,37 +194,41 @@ export default function AboutPage() {
     }
   };
 
-  const deleteLeader = async (role: Role) => {
-    if (!supabase || !leaders[role]) return;
+  const deleteLeader = async (role: string) => {
+    if (!supabase) return;
     if (!user || !isAdmin) {
       setMessage('You must be an admin to make changes');
       return;
     }
     
+    const leaderToDelete = leaders.find(l => l.role === role);
+    if (!leaderToDelete) return;
+
     if (!confirm(`Delete ${role}?`)) return;
     setMessage('');
     try {
       const { error } = await supabase
         .from('council_leaders')
         .delete()
-        .eq('id', leaders[role]!.id);
+        .eq('id', leaderToDelete.id);
 
       if (error) {
         setMessage(error.message || 'Failed to delete leader');
         return;
       }
-      setLeaders((prev) => ({ ...prev, [role]: null }));
-      setForms((prev) => ({
-        ...prev,
-        [role]: { name: '', email: '', bio: '', year: '', linkedin_url: '', photo_url: '' },
-      }));
+      setLeaders((prev) => prev.filter(l => l.id !== leaderToDelete.id));
+      setForms((prev) => {
+        const newForms = { ...prev };
+        delete newForms[leaderToDelete.id];
+        return newForms;
+      });
       setMessage(`${role} deleted successfully`);
     } catch {
       setMessage('Unexpected error deleting leader');
     }
   };
 
-  const roleBadge = (role: Role) => {
+  const roleBadge = (role: string) => {
     const cls =
       role === 'President'
         ? 'bg-yellow-100 text-yellow-700'
@@ -458,18 +321,17 @@ export default function AboutPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
-                {ROLES.map((role) => {
-                  const leader = leaders[role];
+              <div className="flex gap-6 overflow-x-auto pb-4 custom-scrollbar snap-x snap-mandatory">
+                {leaders.slice(0, 5).map((leader) => {
                   const avatarColor =
-                    role === 'President'
+                    leader.role === 'President'
                       ? 'bg-yellow-100 text-yellow-700'
-                      : role === 'Vice President'
+                      : leader.role === 'Vice President'
                       ? 'bg-blue-100 text-blue-700'
                       : 'bg-green-100 text-green-700';
                   return (
                     <div
-                      key={role}
+                      key={leader.id}
                       className="flex-shrink-0 w-80 bg-white rounded-2xl border border-gray-200 p-6 snap-center shadow-lg hover:shadow-xl transition-shadow"
                     >
                       {/* Photo */}
@@ -477,7 +339,7 @@ export default function AboutPage() {
                         {leader?.photo_url ? (
                           <img
                             src={leader.photo_url}
-                            alt={leader?.name || role}
+                            alt={leader?.name || leader.role}
                             className="w-24 h-24 rounded-full object-cover border-4 border-su-gold"
                           />
                         ) : (
@@ -489,7 +351,7 @@ export default function AboutPage() {
 
                       <div className="flex flex-col items-center">
                         {leader?.name && <h3 className="text-lg font-semibold text-gray-900">{leader.name}</h3>}
-                        <div className="mt-1">{roleBadge(role)}</div>
+                        <div className="mt-1">{roleBadge(leader.role)}</div>
                       </div>
 
                       {/* Year only */}
