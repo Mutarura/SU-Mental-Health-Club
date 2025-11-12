@@ -17,7 +17,7 @@ Designed for accessibility, community engagement, and awareness of mental health
 |-------|--------------------| 
 | **Frontend** | ⚛️ React.js + 💨 TailwindCSS | 
 | **Backend** | 🧩 Supabase (for data + authentication) | 
-| **Dev Tools** | 💻 Visual Studio Code + 🧠 Trae AI | 
+| **Dev Tools** | 💻 Visual Studio Code | 
 | **Hosting** | ▲ Vercel | 
 | **Version Control** | 🐙 GitHub | 
   
