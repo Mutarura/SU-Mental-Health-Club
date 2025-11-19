@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Volume2,
   Sun,
+  Camera,
 } from 'lucide-react';
 
 interface IconProps {
@@ -69,3 +70,4 @@ export const SoundIcon = withA11y(Volume2);
 
 // Extra icon for Monthly Awareness
 export const SunIcon = withA11y(Sun);
+export const CameraIcon = withA11y(Camera);

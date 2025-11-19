@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, uploadImageToStorage } from '../../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import type { Event, Resource, Quote, CouncilLeader, GalleryEvent, GalleryImage } from '../../types/database.types';
@@ -12,7 +12,8 @@ import {
   PeopleIcon, 
   UserIcon,
   DocumentIcon,
-  SunIcon
+  SunIcon,
+  CameraIcon
 } from '../../components/icons';
 import { MONTHLY_AWARENESS as DEFAULT_AWARENESS } from '../../data/monthlyAwareness';
 
@@ -42,6 +43,54 @@ export default function AdminPage() {
   const [showEmailPrompt, setShowEmailPrompt] = useState(false);
   const [totalQuotes, setTotalQuotes] = useState(0);
   const [totalMonthlyCampaigns, setTotalMonthlyCampaigns] = useState(0);
+
+  const IDLE_TIMEOUT_MINUTES = 10; // 10 minutes idle timeout
+  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityTimeRef = useRef<number>(Date.now());
+
+  const handleSignOut = async () => {
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setMessage(`Error signing out: ${error.message}`);
+    } else {
+      setUser(null);
+      setIsAdmin(false);
+      setMessage('You have been logged out due to inactivity.');
+    }
+    setAuthLoading(false);
+  };
+
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimeoutRef.current) {
+      clearTimeout(idleTimeoutRef.current);
+    }
+    lastActivityTimeRef.current = Date.now();
+    idleTimeoutRef.current = setTimeout(() => {
+      const idleTime = Date.now() - lastActivityTimeRef.current;
+      if (idleTime >= IDLE_TIMEOUT_MINUTES * 60 * 1000) {
+        handleSignOut();
+      }
+    }, IDLE_TIMEOUT_MINUTES * 60 * 1000 + 1000); // Add a small buffer
+  }, [IDLE_TIMEOUT_MINUTES]); // handleSignOut is declared later, so remove it from the dependency array
+
+  const setupIdleTimer = useCallback(() => {
+    window.addEventListener('mousemove', resetIdleTimer);
+    window.addEventListener('keydown', resetIdleTimer);
+    window.addEventListener('scroll', resetIdleTimer);
+    resetIdleTimer(); // Initialize the timer
+  }, [resetIdleTimer]);
+
+  const clearIdleTimer = useCallback(() => {
+    if (idleTimeoutRef.current) {
+      clearTimeout(idleTimeoutRef.current);
+    }
+    window.removeEventListener('mousemove', resetIdleTimer);
+    window.removeEventListener('keydown', resetIdleTimer);
+    window.removeEventListener('scroll', resetIdleTimer);
+  }, [resetIdleTimer]);
+
+
 
   const handleForgotPassword = async () => {
      if (!window.confirm('Are you sure you want to reset the password? This will log you out.')) {
@@ -220,6 +269,9 @@ export default function AdminPage() {
       const admin = await checkIsAdmin(user?.email ?? null);
       setIsAdmin(admin);
       setLoading(false);
+      if (admin) {
+        setupIdleTimer();
+      }
     });
 
     // Auth state changes with admins table check
@@ -229,13 +281,19 @@ export default function AdminPage() {
       checkIsAdmin(u?.email ?? null).then((admin) => {
         setIsAdmin(admin);
         setLoading(false);
+        if (admin) {
+          setupIdleTimer();
+        } else {
+          clearIdleTimer();
+        }
       });
     });
 
     return () => {
       subscription?.unsubscribe();
+      clearIdleTimer();
     };
-  }, []);
+  }, [setupIdleTimer, clearIdleTimer]);
 
   // Message auto-clear
   useEffect(() => {
@@ -950,9 +1008,7 @@ export default function AdminPage() {
   };
 
 
-  const handleSignOut = async () => {
-    if (supabase) await supabase.auth.signOut();
-  };
+
 
   // LOADING
   if (loading) {
@@ -1102,21 +1158,22 @@ export default function AdminPage() {
             </div>
             <nav className="space-y-2">
               {[
-                { id: 'dashboard' as const, label: 'Dashboard Overview', icon: HomeIcon },
+                { id: 'dashboard' as const, label: 'Dashboard Overview', icon: null },
                 { id: 'gallery' as const, label: '📸 Gallery Manager', icon: null },
-                { id: 'events' as const, label: '📅 Event Manager', icon: CalendarIcon },
-                { id: 'resources' as const, label: '📚 Resource Manager', icon: BookIcon },
-                { id: 'council' as const, label: '🧑‍🤝‍🧑 Council Management', icon: PeopleIcon },
+                { id: 'events' as const, label: '📅 Event Manager', icon: null },
+                { id: 'resources' as const, label: '📚 Resource Manager', icon: null },
+                { id: 'council' as const, label: '🧑‍🤝‍🧑 Council Management', icon: null },
                 { id: 'awareness' as const, label: 'Monthly Awareness', icon: SunIcon },
-                { id: 'quotes' as const, label: '📝 Quotes Manager', icon: ChatIcon },
+                { id: 'quotes' as const, label: '📝 Quotes Manager', icon: null },
               ].map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium flex items-center ${
                     activeTab === tab.id ? 'bg-blue-50 text-su-blue' : 'hover:bg-gray-50 text-gray-800'
                   }`}
                 >
+                  {tab.icon && <tab.icon className="w-5 h-5 mr-2" />}
                   {tab.label}
                 </button>
               ))}
@@ -1183,7 +1240,7 @@ export default function AdminPage() {
                   </div>
                   <div className="bg-white rounded-lg shadow-md p-6">
                     <div className="flex items-center">
-                      <div className="p-3 rounded-full bg-purple-100 text-purple-600"><PeopleIcon className="w-6 h-6" /></div>
+                      <div className="p-3 rounded-full bg-purple-100 text-purple-600"><CameraIcon className="w-6 h-6" /></div>
                       <div className="ml-4">
                         <p className="text-sm font-medium text-gray-600">Gallery Events</p>
                         <p className="text-2xl font-bold text-gray-900">{stats.totalGalleryEvents}</p>
@@ -1200,6 +1257,9 @@ export default function AdminPage() {
                     </div>
                   </div>
                 </div>
+                <p className="text-base italic font-bold text-gray-600 mt-10 text-center">
+                  NOTE: Remember to Sign out after finishing your session.
+                </p>
               </div>
             )}
 
@@ -1704,7 +1764,9 @@ export default function AdminPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {resources.map(resource => (
                         <tr key={resource.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{resource.title}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {resource.title.length > 50 ? resource.title.substring(0, 50) + '...' : resource.title}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{resource.category}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                             <button
@@ -2045,6 +2107,11 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Logout Reminder */}
+          <div className="text-center text-sm text-gray-500 mt-8 mb-4">
+      
           </div>
         </div>
       </div>
