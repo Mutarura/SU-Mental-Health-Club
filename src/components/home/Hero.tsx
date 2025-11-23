@@ -7,10 +7,10 @@ export default function Hero() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center md:text-left md:flex md:items-center md:justify-between gap-12">
           <div className="md:w-1/2">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+            <h1 className="text-5xl font-extrabold mb-4">
               Strathmore Mental Health Club
             </h1>
-            <p className="text-lg sm:text-xl mb-8 text-gray-200 leading-relaxed">
+            <p className="text-xl mb-8 text-gray-200">
               Promoting mental wellness and providing support for the Strathmore University community.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mt-8">

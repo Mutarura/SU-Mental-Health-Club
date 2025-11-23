@@ -172,7 +172,7 @@ export default function ResourcesPage() {
 
   return (
     <div className="py-12 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col">
         {/* Header with Logo */}
         <div className="text-center mb-16">
           <div className="flex justify-center items-center mb-6">
@@ -193,7 +193,7 @@ export default function ResourcesPage() {
 
         {/* Professional Tabs */}
         <div className="mt-4">
-          <nav className="relative flex items-center gap-10 border-b border-gray-200">
+          <nav className="sticky top-0 z-10 bg-gray-50 relative flex items-center gap-10 border-b border-gray-200">
             <button
               role="tab"
               aria-selected={activeTab === 'articles'}
@@ -246,7 +246,7 @@ export default function ResourcesPage() {
         </div>
 
         {/* Resources Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8 overflow-y-auto">
           {list.map((resource) => {
             const cat = (resource.category || '').toLowerCase();
             const isArticle = cat.includes('article') || cat.includes('guide');

@@ -7,42 +7,6 @@ import type { Event } from '../../types/database.types';
 import { CalendarIcon, LocationIcon, ClockIcon } from '../../components/icons';
 import { error } from 'console';
 
-const DEFAULT_EVENTS: Event[] = [
-  {
-    id: '1',
-    title: 'Mental Health Awareness Week',
-    slug: 'mental-health-awareness-week',
-    description: 'A week-long series of events focused on raising awareness about mental health issues among university students.',
-    start: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    end: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
-    location: 'Strathmore University Main Campus',
-    image_url: undefined,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Stress Management Workshop',
-    slug: 'stress-management-workshop',
-    description: 'Learn effective techniques to manage academic stress and maintain well-being.',
-    start: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString(),
-    end: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
-    location: 'Student Center',
-    image_url: undefined,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Peer Support Circle',
-    slug: 'peer-support-circle',
-    description: 'A safe, confidential space for students to share experiences and support one another.',
-    start: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
-    end: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
-    location: 'Library Lounge',
-    image_url: undefined,
-    created_at: new Date().toISOString(),
-  },
-];
-
 export default function EventsPreview() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +33,7 @@ export default function EventsPreview() {
     setLoading(true);
     try {
       if (!supabase) {
-        setEvents(DEFAULT_EVENTS);
+        setEvents([]); // No supabase, no events
         return;
       }
 
@@ -81,14 +45,14 @@ export default function EventsPreview() {
         .limit(3);
 
       if (error) {
-        console.warn('Database error (using fallback data):', error.message);
-        setEvents(DEFAULT_EVENTS);
+        console.warn('Database error:', error.message);
+        setEvents([]); // On error, show no events
       } else {
-        setEvents(data && data.length > 0 ? data : DEFAULT_EVENTS);
+        setEvents(data || []); // If no data, set empty array
       }
     } catch (error) {
       console.warn('Error fetching events:', error);
-      setEvents(DEFAULT_EVENTS);
+      setEvents([]); // On error, show no events
     } finally {
       setLoading(false);
     }
@@ -136,7 +100,10 @@ export default function EventsPreview() {
           <>
             {upcomingEvents.length === 0 ? (
               <div className="text-center py-10">
-                <p className="text-gray-600 text-lg">No upcoming events at the moment.</p>
+                <p className="text-gray-600 text-lg mb-4">No upcoming events, see past events.</p>
+                <Link href="/events" className="inline-block bg-su-blue text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+                  View All Events
+                </Link>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -213,12 +180,7 @@ export default function EventsPreview() {
               </div>
             )}
 
-            {/* CTA Button */}
-            <div className="text-center mt-12">
-              <Link href="/events" className="inline-block bg-su-blue text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
-                View All Events
-              </Link>
-            </div>
+
           </>
         )}
       </div>
